@@ -37,6 +37,10 @@ public class GarijDbContext : IdentityDbContext<IdentityUser>
 
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
+    public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
+
+    public DbSet<AiRequestLog> AiRequestLogs => Set<AiRequestLog>();
+
     public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

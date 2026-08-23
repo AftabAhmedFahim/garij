@@ -14,6 +14,8 @@ public class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Property(p => p.PartNumber).IsRequired().HasMaxLength(50);
         builder.Property(p => p.UnitPrice).HasColumnType("decimal(18,2)");
 
+        builder.ToTable(t => t.HasCheckConstraint("CK_Part_QuantityInStock", "\"QuantityInStock\" >= 0"));
+
         builder.HasMany(p => p.JobPartsUsed)
             .WithOne(jpu => jpu.Part)
             .HasForeignKey(jpu => jpu.PartId)
