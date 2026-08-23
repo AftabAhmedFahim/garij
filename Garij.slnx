@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Garij.Application/Garij.Application.csproj" />
     <Project Path="src/Garij.Domain/Garij.Domain.csproj" />
+    <Project Path="src/Garij.Application/Garij.Application.csproj" />
     <Project Path="src/Garij.Infrastructure/Garij.Infrastructure.csproj" />
     <Project Path="src/Garij.Web/Garij.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Garij.UnitTests/Garij.UnitTests.csproj" />
+    <Project Path="tests/Garij.IntegrationTests/Garij.IntegrationTests.csproj" />
     <Project Path="tests/Garij.Tests/Garij.Tests.csproj" />
   </Folder>
 </Solution>
