@@ -120,16 +120,6 @@ garij/
 
 ---
 
----
-
-## 🤝 AI Assistant & Git Contribution Workflow
-
-> 💡 **Developer & AI Note**: Always read [`CONTEXT.md`](CONTEXT.md) before starting work.
-
-1. **Create Feature Branch**:
-   Never commit directly to `main`. Create a feature branch for every task:
-   ```bash
-   git checkout -b feature/<task-name>
 
 ## 📄 License
 
