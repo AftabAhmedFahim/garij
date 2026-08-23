@@ -1,59 +1,126 @@
-# Garij — Intelligent Vehicle Service Center Management System
+# 🚗 Garij — Intelligent Vehicle Service Center Management System
 
-Garij is a university group project: a web application for managing the day-to-day
-operations of a vehicle service center — customer and vehicle records, service job
-intake, mechanic assignment, parts inventory, billing, notifications, and reporting,
-plus a public booking-status lookup for customers.
+[![.NET 10.0](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Architecture](https://img.shields.io/badge/Architecture-3--Layer%20Clean-blue)](CONTEXT.md)
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20SQL%20Server-green)](https://learn.microsoft.com/ef/core/)
+[![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
 
-## Tech Stack
+**Garij** is a state-of-the-art enterprise web application designed to digitize and automate operations for vehicle service centers. It manages customer and vehicle records, service job intake, mechanic assignments, parts inventory tracking, invoice billing, real-time notifications, AI-powered predictive diagnostics, and a public booking status lookup portal.
 
-- **ASP.NET Core MVC** (.NET 10, LTS)
-- **Entity Framework Core** (SQL Server / LocalDB)
-- **ASP.NET Core Identity** for authentication and role-based authorization
-- **xUnit** for testing
-- Clean, layered architecture: Domain → Application → Infrastructure → Web
+---
 
-## Prerequisites
+## 🏗️ Architecture & Technology Stack
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) or later
-- SQL Server LocalDB (installed with Visual Studio, or via [SQL Server Express LocalDB](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb))
-- Visual Studio 2022 (17.12+), Rider, or VS Code with the C# Dev Kit
+The project follows a clean **3-Layer Architecture** (Presentation, Application, Domain, Infrastructure) ensuring strict separation of concerns, high maintainability, and testability.
 
-## Clone and Run
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 Garij.Web (ASP.NET Core MVC)                │
+│   Controllers, Views, Identity UI, Middleware, DI Wiring     │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+               ▼                              ▼
+┌──────────────────────────────┐  ┌───────────────────────────┐
+│     Garij.Application        │  │   Garij.Infrastructure    │
+│ Service Logic, DTOs, Contracts│  │ EF Core DbContext, Repos, │
+└──────────────┬───────────────┘  │ Identity, External APIs   │
+               │                  └──────────────┬────────────┘
+               ▼                                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Garij.Domain                           │
+│           Core Entities, Enums, Domain Exceptions           │
+└─────────────────────────────────────────────────────────────┘
+```
 
+- **Framework**: .NET 10.0 ASP.NET Core MVC
+- **Data Access**: Entity Framework Core 10.0 (Dual support for SQLite local development and SQL Server production)
+- **Security & Auth**: ASP.NET Core Identity with Role-Based Access Control (`Admin`, `Receptionist`, `Mechanic`, `Customer`)
+- **AI Intelligence Engine**: Integrated Google Gemini API template for predictive maintenance and duration estimation
+- **Testing**: xUnit unit & integration testing framework (`Garij.UnitTests`, `Garij.IntegrationTests`)
+- **Exception Handling**: Global exception middleware returning structured JSON for AJAX and friendly views for web requests
+
+---
+
+## 📋 Prerequisites
+
+Before running the project, ensure you have installed:
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download) or later
+- Git
+- Any code editor: Visual Studio 2022 (v17.12+), JetBrains Rider, or VS Code with C# Dev Kit
+
+---
+
+## ⚡ Quick Start & How to Run
+
+### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/AftabAhmedFahim/garij.git
 cd garij
+```
 
-# Restore and build
-dotnet restore
-dotnet build
+### 2. Build the Solution
+```bash
+dotnet build Garij.sln
+```
 
-# Apply database migrations (once migrations exist)
-dotnet ef database update --project src/Garij.Infrastructure --startup-project src/Garij.Web
-
-# Run the web app
+### 3. Run the Web Application
+```bash
 dotnet run --project src/Garij.Web
 ```
 
-The app will be available at the URL printed in the console (typically `https://localhost:5001`).
+> **Note**: On startup, the application will automatically create the database (`Garij.db`), apply schema definitions, and seed default user roles.
 
-### Running the tests
+Open your browser and navigate to:
+```
+http://localhost:5099
+```
 
+### 4. Run Tests
+Execute all unit and integration test suites:
 ```bash
-dotnet test
+dotnet test Garij.sln
 ```
 
-## Folder Layout
+---
+
+## 🗄️ Database Configuration
+
+The application is configured out of the box with **cross-platform database support**:
+
+- **Local Development (Linux / macOS / Windows)**:
+  Uses SQLite database file (`src/Garij.Web/Garij.db`). No database server setup required!
+- **Production / SQL Server**:
+  To switch to SQL Server, update `src/Garij.Web/appsettings.json`:
+  ```json
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=GarijDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;"
+  }
+  ```
+
+---
+
+## 📂 Project Structure
 
 ```
-Garij.slnx
-src/
-  Garij.Domain/           Entities and enums. No dependencies on other projects.
-  Garij.Application/      Service interfaces, DTOs, and service implementations. Depends on Domain.
-  Garij.Infrastructure/   EF Core DbContext, entity configurations, repositories. Depends on Domain, Application.
-  Garij.Web/               ASP.NET Core MVC app: controllers, views, Identity, DI wiring. Depends on all of the above.
-tests/
-  Garij.Tests/             xUnit test project covering all layers.
-.github/workflows/         CI pipeline (build + test on push/PR).
+garij/
+├── Garij.sln                  # Main Visual Studio Solution
+├── Garij.slnx                 # .NET 10 Solution Manifest
+├── CONTEXT.md                 # AI Assistant & Developer Context Log
+├── README.md                  # Project Documentation
+├── src/
+│   ├── Garij.Domain/          # Core Domain Entities, Enums, Custom Exceptions
+│   ├── Garij.Application/     # Interfaces, DTOs, Business Logic Services
+│   ├── Garij.Infrastructure/  # EF Core DbContext, Repositories, Migrations
+│   └── Garij.Web/             # MVC Controllers, Views, Middleware, Program.cs
+└── tests/
+    ├── Garij.UnitTests/       # Unit Tests (Domain, Logic)
+    ├── Garij.IntegrationTests/# Integration Tests (Web Pipeline, DI)
+    └── Garij.Tests/           # Additional Test Suites
 ```
+
+---
+
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
