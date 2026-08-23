@@ -130,17 +130,6 @@ garij/
    Never commit directly to `main`. Create a feature branch for every task:
    ```bash
    git checkout -b feature/<task-name>
-   ```
-2. **Update CONTEXT.md**:
-   After completing your task, update the "Recent Progress Log" section in [`CONTEXT.md`](CONTEXT.md) with details of your work.
-3. **Commit and Push**:
-   ```bash
-   git add .
-   git commit -m "feat: description of changes"
-   git push origin feature/<task-name>
-   ```
-
----
 
 ## 📄 License
 
