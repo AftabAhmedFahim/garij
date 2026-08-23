@@ -33,9 +33,10 @@
 
 ## 👥 Team Responsibility Matrix & Task Priorities
 
-| Developer | Key Module Responsibilities | Priority 1 Task | Status |
+| Developer | Key Module Responsibilities | Priority Task | Status |
 | :--- | :--- | :--- | :--- |
 | **Emon** (Rakibul Islam Emon) | Foundation, Architecture, Identity, Vehicle Intake | Project Architecture Scaffolding & Exception Handling (Issue #1) | ✅ **Completed** |
+| **Emon** (Rakibul Islam Emon) | Foundation, Architecture, Identity, Vehicle Intake | Database Schema Definition, EF Core Migrations & Seed Data (Issue #5) | ✅ **Completed** |
 | **Aftab** (Aftab Ahmed) | Customer & Vehicle Management, Admin Dashboard, Reports | Customer & Vehicle Management UI/CRUD (Issue #2) | ⏳ Pending |
 | **Rabib** (Rabib) | Mechanic Diagnostics, Parts Inventory, Billing, AI Intelligence | Diagnostic & Repair Log / Parts Inventory (Issue #3) | ⏳ Pending |
 | **Samia** (Samia) | Public Portal, Customer Booking Lookup, Notifications, Testing | Customer Booking Status Lookup (Issue #4) | ⏳ Pending |
@@ -43,6 +44,14 @@
 ---
 
 ## 📝 Recent Progress Log
+
+### [2026-08-24] - Database Schema Definition, EF Core Migrations & Seed Data (Emon - Priority 2)
+- **Domain Entities**: Created `ApplicationUser.cs` and `AiRequestLog.cs` under `src/Garij.Domain/Entities/`.
+- **Fluent API Configurations**: Created `AiRequestLogConfiguration.cs` and `ApplicationUserConfiguration.cs`. Enforced database check constraint for positive stock (`QuantityInStock >= 0` - BR-009) in `PartConfiguration.cs`, unique license plate index (BR-002) in `VehicleConfiguration.cs`, and 1:1 invoice cardinality (BR-012) in `InvoiceConfiguration.cs`.
+- **GarijDbContext**: Updated `GarijDbContext.cs` with `ApplicationUsers` and `AiRequestLogs` DbSets.
+- **EF Core Migrations**: Generated initial migration `InitialCreate` under `src/Garij.Infrastructure/Migrations/`.
+- **DbSeeder**: Implemented `DbSeeder.cs` under `src/Garij.Infrastructure/SeedData/` and registered it in `Program.cs`. Automatically seeds Identity roles (`Admin`, `Receptionist`, `Mechanic`, `Customer`), Default Admin (`admin@garij.com` / `Admin@12345`), Service Catalog items, and stock parts.
+- **Git Branching**: Created and pushed work to branch `feature/database-schema-and-seeder`.
 
 ### [2026-08-24] - Architecture Scaffolding & Exception Middleware (Emon - Priority 1)
 - **Scaffolded Solution**: Generated `Garij.sln` containing all 7 core projects (`Web`, `Application`, `Domain`, `Infrastructure`, `UnitTests`, `IntegrationTests`, `Tests`).

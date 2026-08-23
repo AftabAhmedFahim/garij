@@ -1,7 +1,7 @@
 using Garij.Application;
-using Garij.Domain.Enums;
 using Garij.Infrastructure;
 using Garij.Infrastructure.Persistence;
+using Garij.Infrastructure.SeedData;
 using Garij.Web.Middleware;
 using Microsoft.AspNetCore.Identity;
 
@@ -44,23 +44,6 @@ app.MapControllerRoute(
     pattern: "{controller=StatusLookup}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-await SeedRolesAsync(app);
+await DbSeeder.SeedAsync(app.Services);
 
 app.Run();
-
-static async Task SeedRolesAsync(WebApplication app)
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<GarijDbContext>();
-    await dbContext.Database.EnsureCreatedAsync();
-
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-    foreach (var role in Enum.GetNames<UserRole>())
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-}
