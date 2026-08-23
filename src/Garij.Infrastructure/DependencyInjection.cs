@@ -13,7 +13,21 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<GarijDbContext>(options =>
-            options.UseSqlServer(connectionString));
+        {
+            if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("Data Source=") || connectionString.Contains(".db"))
+            {
+                options.UseSqlite(string.IsNullOrEmpty(connectionString) ? "Data Source=Garij.db" : connectionString);
+            }
+            else if (connectionString.Contains("(localdb)") && !OperatingSystem.IsWindows())
+            {
+                // Fallback to SQLite on non-Windows platforms if Windows-only LocalDB connection string is specified
+                options.UseSqlite("Data Source=Garij.db");
+            }
+            else
+            {
+                options.UseSqlServer(connectionString);
+            }
+        });
 
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IVehicleRepository, VehicleRepository>();

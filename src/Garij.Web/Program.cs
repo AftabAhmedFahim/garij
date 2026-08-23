@@ -51,6 +51,9 @@ app.Run();
 static async Task SeedRolesAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<GarijDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
     foreach (var role in Enum.GetNames<UserRole>())
