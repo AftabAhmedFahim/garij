@@ -207,3 +207,9 @@ appsettings.*.local.json
 # Rider / VSCode
 .vscode/
 *.code-workspace
+
+# SQLite local databases
+*.db
+*.db-shm
+*.db-wal
+
