@@ -120,15 +120,6 @@ garij/
 
 ---
 
-## 👥 Team Responsibility Matrix
-
-| Developer | Responsibility Area | Priority Module |
-| :--- | :--- | :--- |
-| **Emon** (Rakibul Islam Emon) | Base Architecture, Identity, Job Intake | Architecture Scaffolding & Exception Handling |
-| **Aftab** (Aftab Ahmed) | Customer & Vehicle Management, Admin, Reports | Customer & Vehicle Management Module |
-| **Rabib** (Rabib) | Mechanic Diagnostics, Parts Inventory, Billing, AI | Diagnostic Log & Parts Inventory Module |
-| **Samia** (Samia) | Public Booking Lookup, Notifications, Testing | Customer Booking Status Lookup Portal |
-
 ---
 
 ## 🤝 AI Assistant & Git Contribution Workflow
