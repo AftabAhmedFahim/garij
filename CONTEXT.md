@@ -73,6 +73,12 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-08-26] - Customer Direct Link Reconciliation, Default Route Update & Solution Cleanup
+- **Customer → ServiceJob Direct Link**: Added `CustomerId` FK and `Customer` navigation property to `ServiceJob.cs` and `ServiceJobs` collection to `Customer.cs` matching report ERD. Configured `FK_ServiceJobs_Customers_CustomerId` in `ServiceJobConfiguration`.
+- **Default Route Landing**: Updated default route in `Program.cs` to `Dashboard` (`{controller=Dashboard}/{action=Index}`), routing unauthenticated users to `/Account/Login`.
+- **Solution Standardization**: Removed duplicate `Garij.slnx` file to standardize build tools exclusively on `Garij.sln`.
+- **EF Core Migration & Verification**: Re-generated MS SQL EF Core initial migration `20260826093448_InitialCreate`. All unit and integration tests pass cleanly (100% success).
+
 ### [2026-08-26] - Identity Model Structure Resolution & Authorization Module Setup
 - **Identity Model Consolidation**: Finalized Foreign Key (FK) Link between domain `User` (`StaffUsers`) and ASP.NET Core Identity (`AspNetUsers`). Configured `FK_StaffUsers_AspNetUsers_IdentityUserId` in `UserConfiguration` with cascade delete and index.
 - **Entity Cleanup**: Removed redundant `ApplicationUser` entity and configuration.

@@ -53,7 +53,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=StatusLookup}/{action=Index}/{id?}")
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 await DbSeeder.SeedAsync(app.Services);
