@@ -1,4 +1,6 @@
+using Garij.Web.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Garij.Web.Controllers;
@@ -6,22 +8,65 @@ namespace Garij.Web.Controllers;
 [AllowAnonymous]
 public class AccountController : Controller
 {
-    [HttpGet]
-    public IActionResult Login()
+    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly UserManager<IdentityUser> _userManager;
+
+    public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
     {
-        return View();
+        _signInManager = signInManager;
+        _userManager = userManager;
     }
 
     [HttpGet]
-    public IActionResult Register()
+    public IActionResult Login(string? returnUrl = null)
     {
-        return View();
+        return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
-    [HttpGet]
-    public IActionResult Logout()
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Login(LoginViewModel model)
     {
-        return View();
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+        if (result.Succeeded)
+        {
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            {
+                return Redirect(model.ReturnUrl);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Admin"))
+                {
+                    return RedirectToAction("Index", "Admin");
+                }
+                if (roles.Contains("Mechanic"))
+                {
+                    return RedirectToAction("Index", "Mechanic");
+                }
+            }
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        ModelState.AddModelError(string.Empty, "Invalid login attempt. Please check your credentials.");
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return RedirectToAction("Login", "Account");
     }
 
     [HttpGet]

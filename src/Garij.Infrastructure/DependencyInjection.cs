@@ -18,9 +18,9 @@ public static class DependencyInjection
             {
                 options.UseSqlite(string.IsNullOrEmpty(connectionString) ? "Data Source=Garij.db" : connectionString);
             }
-            else if (connectionString.Contains("(localdb)") && !OperatingSystem.IsWindows())
+            else if (!OperatingSystem.IsWindows() && (connectionString.Contains("(localdb)") || connectionString.Contains("Server=localhost") || connectionString.Contains("Server=127.0.0.1")))
             {
-                // Fallback to SQLite on non-Windows platforms if Windows-only LocalDB connection string is specified
+                // Fallback to SQLite on non-Windows platforms if local SQL Server / LocalDB is specified in dev environment
                 options.UseSqlite("Data Source=Garij.db");
             }
             else

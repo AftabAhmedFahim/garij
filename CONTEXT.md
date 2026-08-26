@@ -73,6 +73,13 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-08-26] - Identity Model Structure Resolution & Authorization Module Setup
+- **Identity Model Consolidation**: Finalized Foreign Key (FK) Link between domain `User` (`StaffUsers`) and ASP.NET Core Identity (`AspNetUsers`). Configured `FK_StaffUsers_AspNetUsers_IdentityUserId` in `UserConfiguration` with cascade delete and index.
+- **Entity Cleanup**: Removed redundant `ApplicationUser` entity and configuration.
+- **Seeding Enhancement**: Updated `DbSeeder` to automatically seed `Admin`, `FrontDesk`, and `Mechanic` users in both ASP.NET Identity and `StaffUsers` table with role assignments.
+- **Authorization Modules Unblocked**: Configured application cookie authentication options, implemented `AccountController` with `LoginViewModel` (Login/Logout/AccessDenied), and enabled role-based authorization (`[Authorize(Roles = ...)]`) for Admin and Mechanic modules.
+- **EF Core MS SQL Migration**: Generated fresh initial migration `20260826092543_InitialCreate` targeting MS SQL Server database. Verified all unit/integration tests pass (100% success).
+
 ### [2026-08-24] - Final Roadmap Alignment, MS SQL Database Target & MSB1011 Fix
 - **Roadmap Alignment**: Adopted `ROADMAP.md` as the official team master plan. Re-aligned all developer vertical slice responsibilities and stage tasks.
 - **Database Provider Standard**: Updated primary database configuration to **MS SQL Server** across `appsettings.json` and `DependencyInjection.cs`.

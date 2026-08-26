@@ -1,9 +1,10 @@
+using Garij.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Garij.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Mechanic")]
 public class MechanicController : Controller
 {
     [HttpGet]
