@@ -33,38 +33,45 @@ public static class DbSeeder
                 }
             }
 
-            // 2. Seed Default Admin Account
-            const string adminEmail = "admin@garij.com";
-            const string adminPassword = "Admin@12345";
-
-            var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
-            if (existingAdmin == null)
+            // 2. Seed Default Staff Accounts (Admin, FrontDesk, Mechanic)
+            var defaultAccounts = new[]
             {
-                var adminUser = new IdentityUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true
-                };
+                (Email: "admin@garij.com", Password: "Admin@12345", Name: "System Administrator", Phone: "+1234567890", Role: UserRole.Admin),
+                (Email: "frontdesk@garij.com", Password: "Staff@12345", Name: "Front Desk Staff", Phone: "+1234567891", Role: UserRole.FrontDesk),
+                (Email: "mechanic@garij.com", Password: "Mechanic@12345", Name: "Lead Mechanic", Phone: "+1234567892", Role: UserRole.Mechanic)
+            };
 
-                var createResult = await userManager.CreateAsync(adminUser, adminPassword);
-                if (createResult.Succeeded)
+            foreach (var acc in defaultAccounts)
+            {
+                var existingUser = await userManager.FindByEmailAsync(acc.Email);
+                if (existingUser == null)
                 {
-                    await userManager.AddToRoleAsync(adminUser, nameof(UserRole.Admin));
-                    logger.LogInformation("Seeded Default Admin User: {AdminEmail}", adminEmail);
-
-                    if (!await context.StaffUsers.AnyAsync(u => u.Email == adminEmail))
+                    var identityUser = new IdentityUser
                     {
-                        context.StaffUsers.Add(new User
+                        UserName = acc.Email,
+                        Email = acc.Email,
+                        EmailConfirmed = true
+                    };
+
+                    var createResult = await userManager.CreateAsync(identityUser, acc.Password);
+                    if (createResult.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(identityUser, acc.Role.ToString());
+                        logger.LogInformation("Seeded Default Identity User: {Email} ({Role})", acc.Email, acc.Role);
+
+                        if (!await context.StaffUsers.AnyAsync(u => u.Email == acc.Email))
                         {
-                            IdentityUserId = adminUser.Id,
-                            FullName = "System Administrator",
-                            Email = adminEmail,
-                            PhoneNumber = "+1234567890",
-                            Role = UserRole.Admin,
-                            CreatedAt = DateTime.UtcNow
-                        });
-                        await context.SaveChangesAsync();
+                            context.StaffUsers.Add(new User
+                            {
+                                IdentityUserId = identityUser.Id,
+                                FullName = acc.Name,
+                                Email = acc.Email,
+                                PhoneNumber = acc.Phone,
+                                Role = acc.Role,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                            await context.SaveChangesAsync();
+                        }
                     }
                 }
             }
