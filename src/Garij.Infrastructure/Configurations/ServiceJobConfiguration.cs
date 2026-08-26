@@ -15,6 +15,11 @@ public class ServiceJobConfiguration : IEntityTypeConfiguration<ServiceJob>
 
         builder.Property(sj => sj.DiagnosticNotes).HasMaxLength(2000);
 
+        builder.HasOne(sj => sj.Customer)
+            .WithMany(c => c.ServiceJobs)
+            .HasForeignKey(sj => sj.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(sj => sj.JobServiceDetails)
             .WithOne(jsd => jsd.ServiceJob)
             .HasForeignKey(jsd => jsd.ServiceJobId)

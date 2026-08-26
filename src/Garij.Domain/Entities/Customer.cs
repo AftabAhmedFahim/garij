@@ -15,4 +15,6 @@ public class Customer
     public DateTime CreatedAt { get; set; }
 
     public ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+
+    public ICollection<ServiceJob> ServiceJobs { get; set; } = new List<ServiceJob>();
 }

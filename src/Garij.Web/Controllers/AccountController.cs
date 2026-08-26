@@ -1,3 +1,5 @@
+using Garij.Domain.Entities;
+using Garij.Infrastructure.Persistence;
 using Garij.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,11 +12,16 @@ public class AccountController : Controller
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly GarijDbContext _context;
 
-    public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+    public AccountController(
+        SignInManager<IdentityUser> signInManager,
+        UserManager<IdentityUser> userManager,
+        GarijDbContext context)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _context = context;
     }
 
     [HttpGet]
@@ -57,12 +64,56 @@ public class AccountController : Controller
             return RedirectToAction("Index", "Dashboard");
         }
 
-        ModelState.AddModelError(string.Empty, "Invalid login attempt. Please check your credentials.");
+        ModelState.AddModelError(string.Empty, "Invalid login credentials. Please verify your email and password.");
         return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Register()
+    {
+        return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = new IdentityUser { UserName = model.Email, Email = model.Email, EmailConfirmed = true };
+        var result = await _userManager.CreateAsync(user, model.Password);
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(user, model.Role.ToString());
+
+            _context.StaffUsers.Add(new User
+            {
+                IdentityUserId = user.Id,
+                FullName = model.FullName,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber,
+                Role = model.Role,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+
+        return View(model);
+    }
+
+    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
