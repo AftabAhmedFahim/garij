@@ -27,14 +27,11 @@
                         var isMechanic = User.IsInRole("Mechanic");
                     }
                     <ul class="navbar-nav flex-grow-1">
-                        @if (isAuthenticated)
+                        @if (isAdmin || isFrontDesk)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                             </li>
-                        }
-                        @if (isAdmin || isFrontDesk)
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Customer" asp-action="Index">Customers</a>
                             </li>
