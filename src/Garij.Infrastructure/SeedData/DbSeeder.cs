@@ -97,10 +97,24 @@ public static class DbSeeder
                 context.Parts.AddRange(
                     new Part { Name = "Synthetic Engine Oil 5W-30 (1L)", PartNumber = "OIL-5W30", UnitPrice = 25.00m, QuantityInStock = 50, ReorderLevel = 10 },
                     new Part { Name = "Premium Brake Pads Front Set", PartNumber = "BRK-PAD-F", UnitPrice = 60.00m, QuantityInStock = 30, ReorderLevel = 5 },
+                    new Part { Name = "Premium Brake Pads Rear Set", PartNumber = "BRK-PAD-R", UnitPrice = 55.00m, QuantityInStock = 28, ReorderLevel = 5 },
                     new Part { Name = "Oil Filter Type-A", PartNumber = "FLT-OIL-A", UnitPrice = 12.00m, QuantityInStock = 40, ReorderLevel = 8 },
                     new Part { Name = "Air Filter Universal", PartNumber = "FLT-AIR-U", UnitPrice = 18.00m, QuantityInStock = 25, ReorderLevel = 5 },
+                    new Part { Name = "Cabin Air Filter", PartNumber = "FLT-CAB-U", UnitPrice = 15.00m, QuantityInStock = 22, ReorderLevel = 5 },
                     new Part { Name = "Spark Plug Set Platinum", PartNumber = "SPK-PLG-P", UnitPrice = 45.00m, QuantityInStock = 20, ReorderLevel = 5 },
-                    new Part { Name = "R134a Refrigerant Gas Canister", PartNumber = "REF-134A", UnitPrice = 35.00m, QuantityInStock = 15, ReorderLevel = 3 }
+                    new Part { Name = "R134a Refrigerant Gas Canister", PartNumber = "REF-134A", UnitPrice = 35.00m, QuantityInStock = 15, ReorderLevel = 3 },
+                    new Part { Name = "Car Battery 12V 60Ah", PartNumber = "BAT-12V60", UnitPrice = 110.00m, QuantityInStock = 12, ReorderLevel = 3 },
+                    new Part { Name = "Timing Belt Kit", PartNumber = "BLT-TMG-K", UnitPrice = 85.00m, QuantityInStock = 10, ReorderLevel = 2 },
+                    new Part { Name = "Serpentine Drive Belt", PartNumber = "BLT-SRP-D", UnitPrice = 22.00m, QuantityInStock = 18, ReorderLevel = 4 },
+                    new Part { Name = "Front Shock Absorber", PartNumber = "SHK-ABS-F", UnitPrice = 70.00m, QuantityInStock = 16, ReorderLevel = 4 },
+                    new Part { Name = "Rear Shock Absorber", PartNumber = "SHK-ABS-R", UnitPrice = 65.00m, QuantityInStock = 16, ReorderLevel = 4 },
+                    new Part { Name = "Radiator Coolant (1L)", PartNumber = "CLT-RAD-1", UnitPrice = 14.00m, QuantityInStock = 35, ReorderLevel = 8 },
+                    new Part { Name = "Wiper Blade Set", PartNumber = "WPR-BLD-S", UnitPrice = 20.00m, QuantityInStock = 24, ReorderLevel = 6 },
+                    new Part { Name = "Headlight Bulb H4", PartNumber = "BLB-H4-HD", UnitPrice = 8.00m, QuantityInStock = 45, ReorderLevel = 10 },
+                    new Part { Name = "Fuel Filter", PartNumber = "FLT-FUEL-A", UnitPrice = 16.00m, QuantityInStock = 20, ReorderLevel = 5 },
+                    new Part { Name = "Transmission Fluid (1L)", PartNumber = "FLD-TRANS-1", UnitPrice = 19.00m, QuantityInStock = 30, ReorderLevel = 6 },
+                    new Part { Name = "Radiator Hose Upper", PartNumber = "HOS-RAD-U", UnitPrice = 17.00m, QuantityInStock = 14, ReorderLevel = 3 },
+                    new Part { Name = "Wheel Alignment Kit", PartNumber = "ALN-WHL-K", UnitPrice = 40.00m, QuantityInStock = 8, ReorderLevel = 2 }
                 );
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded initial Stock Parts.");
