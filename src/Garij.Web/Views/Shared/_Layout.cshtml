@@ -32,12 +32,18 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                             </li>
+                        }
+                        @if (isAdmin || isFrontDesk)
+                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Customer" asp-action="Index">Customers</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Vehicle" asp-action="Index">Vehicles</a>
                             </li>
+                        }
+                        @if (isAuthenticated)
+                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a>
                             </li>
@@ -59,15 +65,9 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Billing" asp-action="Index">Billing</a>
                             </li>
-                        }
-                        @if (isAuthenticated)
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Notification" asp-action="Index">Notifications</a>
                             </li>
-                        }
-                        @if (isAdmin || isFrontDesk)
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Report" asp-action="Index">Reports</a>
                             </li>
