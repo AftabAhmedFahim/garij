@@ -8,8 +8,9 @@ namespace Garij.IntegrationTests;
 /// <summary>
 /// Exercises role-based [Authorize] enforcement over real HTTP requests against the
 /// seeded demo accounts (admin@garij.com, frontdesk@garij.com, mechanic@garij.com),
-/// covering the "mechanic cannot reach billing" check called out in
-/// docs/aftab-stage1-readiness.md.
+/// covering both the original "mechanic cannot reach billing" check from
+/// docs/aftab-stage1-readiness.md and the full controller role-guard sweep from
+/// issue #23 (Customer/Vehicle/ServiceJob/Parts/Notification).
 /// </summary>
 public class AuthorizationTests : IClassFixture<AuthorizationTestFactory>
 {
@@ -98,6 +99,63 @@ public class AuthorizationTests : IClassFixture<AuthorizationTestFactory>
         await LoginAsync(client, "admin@garij.com", "Admin@12345");
 
         var response = await client.GetAsync("/Report");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Mechanic_RequestingCustomer_IsDenied()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "mechanic@garij.com", "Mechanic@12345");
+
+        var response = await client.GetAsync("/Customer");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Account/AccessDenied", response.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Mechanic_RequestingNotification_IsDenied()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "mechanic@garij.com", "Mechanic@12345");
+
+        var response = await client.GetAsync("/Notification");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Account/AccessDenied", response.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Mechanic_RequestingServiceJob_IsAllowed()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "mechanic@garij.com", "Mechanic@12345");
+
+        var response = await client.GetAsync("/ServiceJob");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Mechanic_RequestingParts_IsAllowed()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "mechanic@garij.com", "Mechanic@12345");
+
+        var response = await client.GetAsync("/Parts");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FrontDesk_RequestingCustomer_IsAllowed()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "frontdesk@garij.com", "Staff@12345");
+
+        var response = await client.GetAsync("/Customer");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
