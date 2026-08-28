@@ -159,4 +159,27 @@ public class AuthorizationTests : IClassFixture<AuthorizationTestFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Mechanic_RequestingDashboard_IsDenied()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "mechanic@garij.com", "Mechanic@12345");
+
+        var response = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Account/AccessDenied", response.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task FrontDesk_RequestingDashboard_IsAllowed()
+    {
+        var client = CreateNonRedirectingClient();
+        await LoginAsync(client, "frontdesk@garij.com", "Staff@12345");
+
+        var response = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 }
