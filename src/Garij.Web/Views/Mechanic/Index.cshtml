@@ -1,5 +1,42 @@
 @{
-    ViewData["Title"] = "Mechanic Assignments";
+    ViewData["Title"] = "Mechanic Dashboard";
 }
 
-<h1>Mechanic Assignments</h1>
+<div class="p-4 mb-4 rounded-4 text-dark" style="background-color:#ffc107;">
+    <h1 class="fw-bold mb-1"><i class="bi bi-tools me-2"></i>Mechanic Dashboard</h1>
+    <p class="mb-0 fs-6">
+        Your workspace for assigned service jobs: log diagnostics, record parts used,
+        and check what is in stock. The full assigned-jobs board with large touch
+        targets lands in a later stage - for now, use the shortcuts below.
+    </p>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-3">
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-wrench-adjustable me-2"></i>Service Jobs</h5>
+                <p class="card-text text-muted">View service jobs and their current status.</p>
+                <a asp-controller="ServiceJob" asp-action="Index" class="btn btn-outline-warning btn-sm">Open Service Jobs</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people me-2"></i>Mechanic Assignments</h5>
+                <p class="card-text text-muted">See which jobs are assigned to which mechanic.</p>
+                <a asp-controller="Mechanic" asp-action="Index" class="btn btn-outline-warning btn-sm">View Assignments</a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-box-seam me-2"></i>Parts</h5>
+                <p class="card-text text-muted">Check stock before logging parts used on a job.</p>
+                <a asp-controller="Parts" asp-action="Index" class="btn btn-outline-warning btn-sm">Open Parts</a>
+            </div>
+        </div>
+    </div>
+</div>

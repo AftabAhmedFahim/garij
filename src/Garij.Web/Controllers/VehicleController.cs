@@ -1,13 +1,14 @@
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Exceptions;
+using Garij.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Garij.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.FrontDesk))]
 public class VehicleController : Controller
 {
     private readonly ICustomerVehicleService _customerVehicleService;
