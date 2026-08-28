@@ -182,4 +182,39 @@ public class AuthorizationTests : IClassFixture<AuthorizationTestFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    /// <summary>
+    /// RegisterViewModel has no Role property, so a client-supplied "Role=Admin" form
+    /// field has nothing to bind to and must be silently ignored by model binding -
+    /// this posts it anyway to prove the server enforces that, not just that the UI
+    /// dropdown was removed.
+    /// </summary>
+    [Fact]
+    public async Task Register_IgnoresClientSuppliedRole_AccountCannotReachAdminPages()
+    {
+        var client = CreateNonRedirectingClient();
+        var registerPage = await client.GetAsync("/Account/Register");
+        var registerHtml = await registerPage.Content.ReadAsStringAsync();
+        var token = AntiForgeryTokenPattern.Match(registerHtml).Groups[1].Value;
+        Assert.False(string.IsNullOrEmpty(token), "Could not find __RequestVerificationToken on the register page.");
+
+        var email = $"selfreg-{Guid.NewGuid():N}@garij.com";
+        var form = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["FullName"] = "Self Registered User",
+            ["Email"] = email,
+            ["PhoneNumber"] = "+1234567890",
+            ["Password"] = "Test@12345",
+            ["ConfirmPassword"] = "Test@12345",
+            ["Role"] = "Admin",
+            ["__RequestVerificationToken"] = token,
+        });
+
+        var registerResponse = await client.PostAsync("/Account/Register", form);
+        Assert.Equal(HttpStatusCode.Redirect, registerResponse.StatusCode);
+
+        var adminCheck = await client.GetAsync("/Admin");
+        Assert.Equal(HttpStatusCode.Redirect, adminCheck.StatusCode);
+        Assert.Contains("/Account/AccessDenied", adminCheck.Headers.Location!.ToString());
+    }
 }
