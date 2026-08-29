@@ -13,17 +13,20 @@ public class ServiceJobService : IServiceJobService
     private readonly IVehicleRepository _vehicleRepository;
     private readonly IUserRepository _userRepository;
     private readonly IMechanicAssignmentRepository _mechanicAssignmentRepository;
+    private readonly INotificationService _notificationService;
 
     public ServiceJobService(
         IServiceJobRepository serviceJobRepository,
         IVehicleRepository vehicleRepository,
         IUserRepository userRepository,
-        IMechanicAssignmentRepository mechanicAssignmentRepository)
+        IMechanicAssignmentRepository mechanicAssignmentRepository,
+        INotificationService notificationService)
     {
         _serviceJobRepository = serviceJobRepository;
         _vehicleRepository = vehicleRepository;
         _userRepository = userRepository;
         _mechanicAssignmentRepository = mechanicAssignmentRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<IEnumerable<ServiceJobDto>> GetAllServiceJobsAsync()
@@ -103,6 +106,7 @@ public class ServiceJobService : IServiceJobService
         if (serviceJobDto.Status == JobStatus.Completed && entity.CompletedAt is null)
         {
             entity.CompletedAt = DateTime.UtcNow;
+            await NotifyJobCompletedAsync(entity);
         }
 
         _serviceJobRepository.Update(entity);
@@ -125,6 +129,7 @@ public class ServiceJobService : IServiceJobService
         if (status == JobStatus.Completed && entity.CompletedAt is null)
         {
             entity.CompletedAt = DateTime.UtcNow;
+            await NotifyJobCompletedAsync(entity);
         }
 
         _serviceJobRepository.Update(entity);
@@ -282,6 +287,15 @@ public class ServiceJobService : IServiceJobService
         while (await _serviceJobRepository.GetByBookingReferenceAsync(candidate) is not null);
 
         return candidate;
+    }
+
+    private async Task NotifyJobCompletedAsync(ServiceJob entity)
+    {
+        await _notificationService.CreateNotificationAsync(new NotificationDto
+        {
+            ServiceJobId = entity.Id,
+            Message = $"Job {entity.BookingReference} has been completed and is ready for review."
+        });
     }
 
     private static ServiceJobDto MapToDto(ServiceJob job) => new()

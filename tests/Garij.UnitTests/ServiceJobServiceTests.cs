@@ -1,4 +1,5 @@
 using Garij.Application.DTOs;
+using Garij.Application.Interfaces;
 using Garij.Application.Services;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
@@ -35,7 +36,7 @@ public class ServiceJobServiceTests : IDisposable
         var jobRepo = new ServiceJobRepository(_context);
         var assignmentRepo = new MechanicAssignmentRepository(_context);
 
-        _serviceJobService = new ServiceJobService(jobRepo, vehicleRepo, userRepo, assignmentRepo);
+        _serviceJobService = new ServiceJobService(jobRepo, vehicleRepo, userRepo, assignmentRepo, new FakeNotificationService());
     }
 
     [Fact]
@@ -274,5 +275,28 @@ public class ServiceJobServiceTests : IDisposable
     {
         _context.Dispose();
         _connection.Dispose();
+    }
+
+    private sealed class FakeNotificationService : INotificationService
+    {
+        private readonly List<NotificationDto> _notifications = new();
+        private int _nextId = 1;
+
+        public Task<IEnumerable<NotificationDto>> GetAllNotificationsAsync() => throw new NotImplementedException();
+
+        public Task<NotificationDto?> GetNotificationByIdAsync(int id) => throw new NotImplementedException();
+
+        public Task<IEnumerable<NotificationDto>> GetNotificationsByServiceJobAsync(int serviceJobId) => throw new NotImplementedException();
+
+        public Task<IEnumerable<NotificationDto>> GetPendingNotificationsAsync() => throw new NotImplementedException();
+
+        public Task<NotificationDto> CreateNotificationAsync(NotificationDto notification)
+        {
+            notification.Id = _nextId++;
+            _notifications.Add(notification);
+            return Task.FromResult(notification);
+        }
+
+        public Task<NotificationDto> RespondToNotificationAsync(int notificationId, NotificationStatus status) => throw new NotImplementedException();
     }
 }
