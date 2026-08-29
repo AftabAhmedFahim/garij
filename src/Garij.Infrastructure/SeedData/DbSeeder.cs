@@ -85,7 +85,11 @@ public static class DbSeeder
                     new ServiceCatalog { Name = "Tire Rotation & Balancing", Description = "Rotate 4 tires and balance wheels", BasePrice = 40.00m, EstimatedDurationMinutes = 40 },
                     new ServiceCatalog { Name = "Engine Computer Diagnostic", Description = "Full OBD-II diagnostic scan and troubleshooting report", BasePrice = 80.00m, EstimatedDurationMinutes = 60 },
                     new ServiceCatalog { Name = "AC Service & Gas Refill", Description = "Air conditioning pressure check, leak check, and R134a refill", BasePrice = 95.00m, EstimatedDurationMinutes = 60 },
-                    new ServiceCatalog { Name = "Wheel Alignment", Description = "4-wheel laser alignment adjustment", BasePrice = 65.00m, EstimatedDurationMinutes = 50 }
+                    new ServiceCatalog { Name = "Wheel Alignment", Description = "4-wheel laser alignment adjustment", BasePrice = 65.00m, EstimatedDurationMinutes = 50 },
+                    new ServiceCatalog { Name = "Full Synthetic Transmission Fluid Service", Description = "Flush and replace transmission fluid with synthetic ATF", BasePrice = 150.00m, EstimatedDurationMinutes = 90 },
+                    new ServiceCatalog { Name = "Spark Plug & Ignition Maintenance", Description = "Replace set of spark plugs and check ignition coils", BasePrice = 110.00m, EstimatedDurationMinutes = 75 },
+                    new ServiceCatalog { Name = "Suspension & Steering Inspection", Description = "Inspect shock absorbers, struts, ball joints, and tie rods", BasePrice = 85.00m, EstimatedDurationMinutes = 60 },
+                    new ServiceCatalog { Name = "Battery & Electrical System Check", Description = "Test battery load, alternator output, and starter motor draw", BasePrice = 45.00m, EstimatedDurationMinutes = 30 }
                 );
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded initial Service Catalog items.");

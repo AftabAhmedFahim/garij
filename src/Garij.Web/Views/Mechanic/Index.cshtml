@@ -1,42 +1,59 @@
+@model IEnumerable<Garij.Domain.Entities.User>
+
 @{
-    ViewData["Title"] = "Mechanic Dashboard";
+    ViewData["Title"] = "Mechanic Roster";
 }
 
-<div class="p-4 mb-4 rounded-4 text-dark" style="background-color:#ffc107;">
-    <h1 class="fw-bold mb-1"><i class="bi bi-tools me-2"></i>Mechanic Dashboard</h1>
-    <p class="mb-0 fs-6">
-        Your workspace for assigned service jobs: log diagnostics, record parts used,
-        and check what is in stock. The full assigned-jobs board with large touch
-        targets lands in a later stage - for now, use the shortcuts below.
-    </p>
-</div>
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Mechanic Staff Roster</h1>
+            <p class="text-muted small mb-0">Overview of available mechanics and lead technicians for job assignments.</p>
+        </div>
+        <a asp-controller="ServiceJob" asp-action="Index" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-list-task me-1"></i> View All Service Jobs
+        </a>
+    </div>
 
-<div class="row row-cols-1 row-cols-md-3 g-3">
-    <div class="col">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-wrench-adjustable me-2"></i>Service Jobs</h5>
-                <p class="card-text text-muted">View service jobs and their current status.</p>
-                <a asp-controller="ServiceJob" asp-action="Index" class="btn btn-outline-warning btn-sm">Open Service Jobs</a>
+    <div class="row g-4">
+        @if (!Model.Any())
+        {
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-people fs-1 d-block mb-2"></i>
+                No mechanics found in staff directory.
             </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-people me-2"></i>Mechanic Assignments</h5>
-                <p class="card-text text-muted">See which jobs are assigned to which mechanic.</p>
-                <a asp-controller="Mechanic" asp-action="Index" class="btn btn-outline-warning btn-sm">View Assignments</a>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-box-seam me-2"></i>Parts</h5>
-                <p class="card-text text-muted">Check stock before logging parts used on a job.</p>
-                <a asp-controller="Parts" asp-action="Index" class="btn btn-outline-warning btn-sm">Open Parts</a>
-            </div>
-        </div>
+        }
+        else
+        {
+            @foreach (var mechanic in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-tools fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-0">@mechanic.FullName</h5>
+                                    <span class="badge bg-info text-dark">@mechanic.Role</span>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-envelope me-2"></i>@mechanic.Email
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="bi bi-telephone me-2"></i>@(string.IsNullOrEmpty(mechanic.PhoneNumber) ? "N/A" : mechanic.PhoneNumber)
+                            </div>
+                            <div class="d-grid mt-3">
+                                <a asp-controller="ServiceJob" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                    Assign to Job
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
     </div>
 </div>

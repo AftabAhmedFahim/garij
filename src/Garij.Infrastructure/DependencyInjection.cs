@@ -1,7 +1,5 @@
-using Garij.Application.Interfaces;
 using Garij.Infrastructure.Persistence;
 using Garij.Infrastructure.Repositories;
-using Garij.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +41,6 @@ public static class DependencyInjection
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<ICustomerVehicleService, CustomerVehicleService>();
 
         return services;
     }

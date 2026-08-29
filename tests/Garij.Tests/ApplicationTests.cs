@@ -7,7 +7,7 @@ using Garij.Infrastructure.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using CustomerVehicleService = Garij.Infrastructure.Services.CustomerVehicleService;
+using CustomerVehicleService = Garij.Application.Services.CustomerVehicleService;
 
 namespace Garij.Tests;
 
