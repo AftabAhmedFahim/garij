@@ -46,7 +46,13 @@ public class ServiceJobService : IServiceJobService
 
     public async Task<ServiceJobDto?> GetServiceJobByBookingReferenceAsync(string bookingReference)
     {
-        var job = await _serviceJobRepository.GetByBookingReferenceAsync(bookingReference);
+        var normalizedBookingReference = bookingReference.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedBookingReference))
+        {
+            return null;
+        }
+
+        var job = await _serviceJobRepository.GetByBookingReferenceAsync(normalizedBookingReference);
         return job is null ? null : MapToDto(job);
     }
 
