@@ -206,7 +206,7 @@ public class BillingService : IBillingService
             InvoiceId = invoice.Id,
             Amount = payment.Amount,
             PaymentMethod = payment.PaymentMethod,
-            TransactionReference = payment.TransactionReference,
+            TransactionReference = payment.TransactionReference ?? string.Empty,
             PaidAt = DateTime.UtcNow
         };
 

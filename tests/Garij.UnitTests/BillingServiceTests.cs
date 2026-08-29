@@ -149,6 +149,27 @@ public class BillingServiceTests
     }
 
     [Fact]
+    public async Task RecordPaymentAsync_ShouldStoreEmptyReference_WhenTransactionReferenceIsNull()
+    {
+        // Regression: an empty "Transaction Reference" field on the RecordPayment form binds to
+        // null (not string.Empty) via ASP.NET Core's model binder, and TransactionReference is a
+        // NOT NULL column — this must not reach the database as null.
+        var invoice = new Invoice { Id = 1, ServiceJobId = 1, InvoiceNumber = "INV-2026-0001", TotalAmount = 100.00m, PaymentStatus = PaymentStatus.Pending };
+        var (invoiceRepo, paymentRepo) = CreateLinkedPaymentRepositories(invoice);
+        var service = CreateService(invoiceRepository: invoiceRepo, paymentTransactionRepository: paymentRepo);
+
+        var result = await service.RecordPaymentAsync(new PaymentTransactionDto
+        {
+            InvoiceId = 1,
+            Amount = 40.00m,
+            PaymentMethod = PaymentMethod.Cash,
+            TransactionReference = null!
+        });
+
+        Assert.Equal(string.Empty, result.TransactionReference);
+    }
+
+    [Fact]
     public async Task RecordPaymentAsync_ShouldMarkPartiallyPaid_OnPartialPayment()
     {
         var invoice = new Invoice { Id = 1, ServiceJobId = 1, InvoiceNumber = "INV-2026-0001", TotalAmount = 100.00m, PaymentStatus = PaymentStatus.Pending };
