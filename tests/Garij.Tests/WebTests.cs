@@ -24,9 +24,9 @@ public class WebTests
     public async Task StatusLookup_Result_WithBookingReference_ReturnsCurrentJobAndHistory()
     {
         var services = new FakeLookupServices();
-        var controller = new StatusLookupController(services, services);
+        var controller = new HomeController(services, services);
 
-        var result = await controller.Result("grj-2026-0007", null, null);
+        var result = await controller.Index("grj-2026-0007", null, null);
 
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<StatusLookupViewModel>(viewResult.Model);
@@ -40,9 +40,9 @@ public class WebTests
     public async Task StatusLookup_Result_WithPlateNumber_SelectsNewestActiveJob()
     {
         var services = new FakeLookupServices();
-        var controller = new StatusLookupController(services, services);
+        var controller = new HomeController(services, services);
 
-        var result = await controller.Result("DHA-2026", null, null);
+        var result = await controller.Index("DHA-2026", null, null);
 
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<StatusLookupViewModel>(viewResult.Model);
@@ -55,9 +55,9 @@ public class WebTests
     public async Task StatusLookup_Result_WithUnknownLookup_ReturnsFriendlyMessage()
     {
         var services = new FakeLookupServices();
-        var controller = new StatusLookupController(services, services);
+        var controller = new HomeController(services, services);
 
-        var result = await controller.Result("UNKNOWN", null, null);
+        var result = await controller.Index("UNKNOWN", null, null);
 
         var viewResult = Assert.IsType<ViewResult>(result);
         var model = Assert.IsType<StatusLookupViewModel>(viewResult.Model);

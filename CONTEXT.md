@@ -73,6 +73,23 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-08-29] - Landing Page UI Redesign & High-Tech Automotive Overhaul (Aftab Ahmed Fahim)
+- **Public Landing Page (HomeController & _LandingLayout)**: Created `HomeController` (`[AllowAnonymous]`) mapped to the default route `/`, with dedicated full-bleed dark automotive layout `_LandingLayout.cshtml` and view `Views/Home/Index.cshtml`.
+- **Visual Design & Aesthetics (Demo Mockup Alignment)**:
+  - Top contact info bar with 24/7 phone (`0-800-123-4567`), email (`Carrepair@example.com`), and Miami location (`9332 Bernier Dam, Miami, USA`).
+  - Dark cinematic hero section featuring vintage muscle car in atmospheric smoke, winged crossed spark-plug repair badge ("REPAIR SERVICE 1983 / TUNING"), uppercase Montserrat headline "CREATIVE & PROFESSIONAL", and glowing "READ MORE" button.
+  - "YOU NEED RENOVATION?" section with geometric blue border framing, descriptive copy, 3D tuned sports car with glowing blue neon wheel rims and underglow, and 3 feature cards (25 Years Reputation, Full Integrity, Quick & Efficient).
+  - Testimonials section with winged emblem and 3-column client review cards (Bill Alvarado, Alberta Wilson, Zachary Fernandez).
+  - Modern automotive footer with workshop operating hours, quick links, and copyright.
+- **Interactive Animations & Preloader**:
+  - Tachometer/Speedometer revving loading animation (`#page-preloader`) on initial page load.
+  - IntersectionObserver scroll reveal animations (`reveal-left`, `reveal-right`, `reveal-up`) across cards and sections.
+  - Glowing hover effects with animated expanding underlines on navigation links and dedicated neon buttons for **Status Lookup**, **Register**, and **Login**.
+- **Typography & Asset Organization**:
+  - Configured Montserrat typography (Regular 400, Italic 400i, Semi-Bold 600, Bold 700/800) with both local `@font-face` support in `wwwroot/fonts/` and Google Fonts fallback.
+  - Structured `wwwroot/images/` for user assets: `hero-car.png`, `renovation-car.png`, `repair-badge.svg`, and `testimonial-badge.svg`.
+- **Testing & Verification**: Verified build (`dotnet build Garij.sln`), 100% unit and integration test pass rate (52/52 tests in `dotnet test Garij.sln`), and verified in browser.
+
 ### [2026-08-29] - Stage 2 Business Logic & Mechanic Workflows (Rakibul Islam Emon)
 - **Job Status State Machine (FR-7)**: Implemented strict status state machine transition validation in `ServiceJobService.ValidateStatusTransition`. Allowed flow: `Requested` &rarr; `InspectionPending` &rarr; `CustomerApprovalNeeded` &rarr; `InProgress` &rarr; `Completed`. `Cancelled` is accessible from any active non-completed state. Invalid transitions trigger `BusinessRuleException` ("BR-007").
 - **Logged Parts Completion Pre-Condition (FR-8)**: Implemented hard business rule in `ServiceJobService` preventing jobs from transitioning to `Completed` status unless at least one part used is recorded in `JobPartsUsed`. Rejections throw `BusinessRuleException` ("BR-008").
