@@ -50,7 +50,7 @@
                                 <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Vehicle" asp-action="Index">Vehicles</a>
                             </li>
                         }
-                        @if (isAuthenticated)
+                        @if (isAdmin || isFrontDesk || isMechanic)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a>
