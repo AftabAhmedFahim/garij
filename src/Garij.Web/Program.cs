@@ -1,4 +1,5 @@
 using Garij.Application;
+using Garij.Application.Configuration;
 using Garij.Infrastructure;
 using Garij.Infrastructure.Persistence;
 using Garij.Infrastructure.SeedData;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+builder.Services.Configure<BillingSettings>(builder.Configuration.GetSection(BillingSettings.SectionName));
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     {
