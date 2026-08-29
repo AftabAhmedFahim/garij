@@ -16,6 +16,7 @@ public class BillingService : IBillingService
 {
     private readonly GarijDbContext _context;
     private readonly IInvoiceRepository _invoiceRepository;
+    private readonly IPaymentTransactionRepository _paymentTransactionRepository;
     private readonly IServiceJobRepository _serviceJobRepository;
     private readonly IServiceJobService _serviceJobService;
     private readonly decimal _taxRatePercent;
@@ -23,12 +24,14 @@ public class BillingService : IBillingService
     public BillingService(
         GarijDbContext context,
         IInvoiceRepository invoiceRepository,
+        IPaymentTransactionRepository paymentTransactionRepository,
         IServiceJobRepository serviceJobRepository,
         IServiceJobService serviceJobService,
         IOptions<BillingSettings> billingSettings)
     {
         _context = context;
         _invoiceRepository = invoiceRepository;
+        _paymentTransactionRepository = paymentTransactionRepository;
         _serviceJobRepository = serviceJobRepository;
         _serviceJobService = serviceJobService;
         _taxRatePercent = billingSettings.Value.TaxRatePercent;
@@ -173,9 +176,61 @@ public class BillingService : IBillingService
         return invoices.Select(MapToSummaryDto);
     }
 
-    public Task<PaymentTransactionDto> RecordPaymentAsync(PaymentTransactionDto payment) => throw new NotImplementedException();
+    /// <summary>
+    /// PaymentStatus is always recomputed from the sum of every payment on the invoice, never
+    /// from just the payment being recorded — a sequence of partials must land on the right
+    /// status at each step, not only on the final one.
+    /// </summary>
+    public async Task<PaymentTransactionDto> RecordPaymentAsync(PaymentTransactionDto payment)
+    {
+        if (payment.Amount <= 0)
+        {
+            throw new BusinessRuleException("BR-012", "Payment amount must be greater than zero.");
+        }
 
-    public Task<IEnumerable<PaymentTransactionDto>> GetPaymentsByInvoiceAsync(int invoiceId) => throw new NotImplementedException();
+        var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(payment.InvoiceId)
+            ?? throw new NotFoundException(nameof(Invoice), payment.InvoiceId);
+
+        var amountPaidSoFar = invoice.PaymentTransactions.Sum(p => p.Amount);
+        var outstanding = invoice.TotalAmount - amountPaidSoFar;
+
+        if (payment.Amount > outstanding)
+        {
+            throw new BusinessRuleException(
+                "BR-013",
+                $"Payment of {payment.Amount:0.00} exceeds the outstanding balance of {outstanding:0.00} on invoice '{invoice.InvoiceNumber}'.");
+        }
+
+        var entity = new PaymentTransaction
+        {
+            InvoiceId = invoice.Id,
+            Amount = payment.Amount,
+            PaymentMethod = payment.PaymentMethod,
+            TransactionReference = payment.TransactionReference,
+            PaidAt = DateTime.UtcNow
+        };
+
+        var newAmountPaid = amountPaidSoFar + payment.Amount;
+        invoice.PaymentStatus = newAmountPaid == invoice.TotalAmount
+            ? PaymentStatus.Paid
+            : newAmountPaid > 0
+                ? PaymentStatus.PartiallyPaid
+                : PaymentStatus.Pending;
+
+        await _paymentTransactionRepository.AddAsync(entity);
+        _invoiceRepository.Update(invoice);
+        await _paymentTransactionRepository.SaveChangesAsync();
+
+        return MapPaymentToDto(entity);
+    }
+
+    public async Task<IEnumerable<PaymentTransactionDto>> GetPaymentsByInvoiceAsync(int invoiceId)
+    {
+        var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(invoiceId)
+            ?? throw new NotFoundException(nameof(Invoice), invoiceId);
+
+        return invoice.PaymentTransactions.OrderBy(p => p.PaidAt).Select(MapPaymentToDto);
+    }
 
     /// <summary>Full breakdown (line items, payment history, running balance) for a single invoice view.</summary>
     private async Task<InvoiceDto> MapToDetailedDtoAsync(Invoice invoice, ServiceJob? job = null)
