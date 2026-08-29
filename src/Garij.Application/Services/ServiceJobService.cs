@@ -318,7 +318,7 @@ public class ServiceJobService : IServiceJobService
         DiagnosticNotes = job.DiagnosticNotes,
         CreatedAt = job.CreatedAt,
         CompletedAt = job.CompletedAt,
-        MechanicAssignments = job.MechanicAssignments.Select(ma => new MechanicAssignmentDto
+        MechanicAssignments = (job.MechanicAssignments ?? Enumerable.Empty<MechanicAssignment>()).Select(ma => new MechanicAssignmentDto
         {
             Id = ma.Id,
             ServiceJobId = ma.ServiceJobId,
