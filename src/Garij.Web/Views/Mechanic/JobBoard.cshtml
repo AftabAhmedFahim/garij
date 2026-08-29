@@ -1,0 +1,224 @@
+@model IEnumerable<Garij.Application.DTOs.ServiceJobDto>
+@using Garij.Domain.Enums
+
+@{
+    ViewData["Title"] = "Mechanic Job Board";
+    int? selectedMechanicId = ViewBag.SelectedMechanicId as int?;
+    var mechanics = ViewBag.Mechanics as SelectList;
+    var currentStaffUser = ViewBag.CurrentStaffUser as Garij.Domain.Entities.User;
+}
+
+<div class="container-fluid px-2 px-md-4 py-3">
+    <!-- Header & Filter Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 bg-white p-3 p-md-4 rounded-3 shadow-sm border">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-kanban fs-2 text-primary"></i>
+                <h1 class="h3 mb-0 text-dark fw-bold">Mechanic Job Board</h1>
+            </div>
+            <p class="text-muted small mb-0 mt-1">Touch-friendly workflow dashboard for active vehicle repairs & diagnostic tasks.</p>
+        </div>
+
+        <form method="get" asp-controller="Mechanic" asp-action="JobBoard" class="d-flex align-items-center gap-2 w-100 w-md-auto">
+            <label for="mechanicId" class="form-label mb-0 fw-semibold text-nowrap small text-muted">Filter Mechanic:</label>
+            <select name="mechanicId" id="mechanicId" class="form-select form-select-lg shadow-sm fs-6" onchange="this.form.submit()">
+                <option value="">-- All Assigned Jobs --</option>
+                @if (mechanics != null)
+                {
+                    foreach (var item in mechanics)
+                    {
+                        if (selectedMechanicId?.ToString() == item.Value)
+                        {
+                            <option value="@item.Value" selected="selected">@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                }
+            </select>
+        </form>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Job Cards Grid -->
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm py-5 text-center my-4">
+            <div class="card-body">
+                <i class="bi bi-clipboard-check text-muted display-4 mb-3 d-block"></i>
+                <h4 class="text-secondary fw-semibold">No assigned jobs found</h4>
+                <p class="text-muted small">Select another mechanic from the filter or check back later for new assignments.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 g-md-4">
+            @foreach (var job in Model)
+            {
+                var isCompleted = job.Status == JobStatus.Completed;
+                var isCancelled = job.Status == JobStatus.Cancelled;
+
+                string badgeClass = job.Status switch
+                {
+                    JobStatus.Requested => "bg-secondary text-white",
+                    JobStatus.InspectionPending => "bg-info text-dark",
+                    JobStatus.CustomerApprovalNeeded => "bg-warning text-dark",
+                    JobStatus.InProgress => "bg-primary text-white",
+                    JobStatus.Completed => "bg-success text-white",
+                    JobStatus.Cancelled => "bg-danger text-white",
+                    _ => "bg-light text-dark"
+                };
+
+                JobStatus? nextStatus = job.Status switch
+                {
+                    JobStatus.Requested => JobStatus.InspectionPending,
+                    JobStatus.InspectionPending => JobStatus.CustomerApprovalNeeded,
+                    JobStatus.CustomerApprovalNeeded => JobStatus.InProgress,
+                    JobStatus.InProgress => JobStatus.Completed,
+                    _ => null
+                };
+
+                string nextStatusLabel = nextStatus switch
+                {
+                    JobStatus.InspectionPending => "Start Inspection",
+                    JobStatus.CustomerApprovalNeeded => "Request Customer Approval",
+                    JobStatus.InProgress => "Begin Work (In Progress)",
+                    JobStatus.Completed => "Mark Job Completed",
+                    _ => ""
+                };
+
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden position-relative @(isCompleted ? "opacity-75" : "")">
+                        <!-- Card Header -->
+                        <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold fs-6 text-dark">@job.BookingReference</span>
+                                <span class="badge ms-2 @badgeClass fs-7 py-1 px-2">@job.Status</span>
+                            </div>
+                            <span class="text-muted small"><i class="bi bi-clock me-1"></i>@job.CreatedAt.ToString("MMM dd, HH:mm")</span>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="card-body p-3 p-md-4">
+                            <!-- Vehicle Details -->
+                            <div class="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+                                <div class="bg-dark text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="bi bi-car-front-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold text-dark">@job.VehiclePlateNumber</h6>
+                                    <small class="text-muted">@job.VehicleDescription • Owner: @job.CustomerName</small>
+                                </div>
+                            </div>
+
+                            <!-- Job Type & Mechanics Assigned -->
+                            <div class="mb-3">
+                                <div class="small fw-semibold text-secondary mb-1">Job Type: <span class="text-dark">@job.JobType</span></div>
+                                <div class="small fw-semibold text-secondary">Assigned Team:</div>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    @if (job.MechanicAssignments.Any())
+                                    {
+                                        foreach (var ma in job.MechanicAssignments)
+                                        {
+                                            <span class="badge @(ma.RoleInJob == RoleInJob.Lead ? "bg-primary" : "bg-outline-secondary border text-dark") p-2">
+                                                <i class="bi bi-person-badge me-1"></i>@ma.MechanicName (@ma.RoleInJob)
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">No mechanics assigned yet</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Diagnostic Notes -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="small fw-semibold text-secondary mb-0"><i class="bi bi-journal-text me-1"></i>Diagnostic Notes</label>
+                                </div>
+                                <div class="p-2 bg-white border rounded-3 text-break small min-h-50">
+                                    @(string.IsNullOrWhiteSpace(job.DiagnosticNotes) ? "No diagnostic notes recorded yet." : job.DiagnosticNotes)
+                                </div>
+                                @if (!isCompleted && !isCancelled)
+                                {
+                                    <button class="btn btn-sm btn-link p-0 text-decoration-none mt-1 text-primary fw-semibold" data-bs-toggle="collapse" data-bs-target="#editNotes-@job.Id">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit Notes
+                                    </button>
+                                    <div class="collapse mt-2" id="editNotes-@job.Id">
+                                        <form method="post" asp-controller="Mechanic" asp-action="SaveNotes">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="serviceJobId" value="@job.Id" />
+                                            <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                            <textarea name="diagnosticNotes" class="form-control form-control-sm mb-2" rows="3" placeholder="Add diagnostic notes...">@job.DiagnosticNotes</textarea>
+                                            <button type="submit" class="btn btn-primary btn-sm w-100">Save Diagnostic Notes</button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Touch-Friendly Card Actions Footer -->
+                        <div class="card-footer bg-light border-top p-3">
+                            <div class="d-flex flex-column gap-2">
+                                @if (!isCompleted && !isCancelled && nextStatus.HasValue)
+                                {
+                                    <form method="post" asp-controller="Mechanic" asp-action="UpdateStatus" class="w-100">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="serviceJobId" value="@job.Id" />
+                                        <input type="hidden" name="newStatus" value="@nextStatus.Value" />
+                                        <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                        <button type="submit" class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+                                                title="@(nextStatus == JobStatus.Completed ? "Ensure parts used are logged before marking completed" : "")">
+                                            <i class="bi bi-arrow-right-circle-fill fs-5"></i>
+                                            <span>@nextStatusLabel</span>
+                                        </button>
+                                    </form>
+                                }
+
+                                <div class="d-flex gap-2">
+                                    <a asp-controller="ServiceJob" asp-action="Details" asp-route-id="@job.Id" class="btn btn-outline-secondary btn-lg flex-fill py-2 fs-6">
+                                        <i class="bi bi-info-circle me-1"></i> Job Details
+                                    </a>
+                                    <a asp-controller="Parts" asp-action="Index" class="btn btn-outline-info btn-lg flex-fill py-2 fs-6 text-dark">
+                                        <i class="bi bi-box-seam me-1"></i> Log Parts
+                                    </a>
+                                    @if (!isCompleted && !isCancelled)
+                                    {
+                                        <form method="post" asp-controller="Mechanic" asp-action="UpdateStatus" onsubmit="return confirm('Are you sure you want to cancel this job?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="serviceJobId" value="@job.Id" />
+                                            <input type="hidden" name="newStatus" value="@JobStatus.Cancelled" />
+                                            <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                            <button type="submit" class="btn btn-outline-danger btn-lg py-2 px-3 fs-6" title="Cancel Job">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -45,8 +45,11 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a>
                             </li>
                         }
-                        @if (isAdmin || isMechanic)
+                        @if (isAdmin || isMechanic || isFrontDesk)
                         {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Mechanic" asp-action="JobBoard">Job Board</a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Mechanic" asp-action="Index">Mechanics</a>
                             </li>
