@@ -21,6 +21,8 @@ public class CustomerVehicleService : ICustomerVehicleService
 
     public Task<VehicleDto?> GetVehicleByLicensePlateAsync(string licensePlateNumber) => throw new NotImplementedException();
 
+    public Task<IEnumerable<ServiceHistoryDto>> GetServiceHistoryByVehicleAsync(int vehicleId) => throw new NotImplementedException();
+
     public Task<VehicleDto> AddVehicleAsync(VehicleDto vehicle) => throw new NotImplementedException();
 
     public Task<VehicleDto> UpdateVehicleAsync(VehicleDto vehicle) => throw new NotImplementedException();
