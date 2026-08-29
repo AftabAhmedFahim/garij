@@ -1,16 +1,29 @@
+@model StatusLookupViewModel
 @{
-    ViewData["Title"] = "Service History Lookup";
+    ViewData["Title"] = "Service Status Lookup";
 }
 
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <h1 class="h3 mb-3">Search Service History</h1>
-        <form asp-action="Result" method="get" class="card card-body">
-            <label for="plateNumber" class="form-label">License plate number</label>
-            <div class="input-group">
-                <input id="plateNumber" name="plateNumber" class="form-control" required placeholder="BR-002" />
-                <button type="submit" class="btn btn-primary">Search</button>
+<section class="public-lookup-shell">
+    <div class="public-lookup-panel">
+        <div class="lookup-heading">
+            <p class="lookup-kicker">Garij public portal</p>
+            <h1>Track your vehicle service</h1>
+            <p>Enter your booking reference or license plate to see the current job status and service history.</p>
+        </div>
+
+        <form asp-action="Result" method="get" class="lookup-form">
+            <label for="query" class="form-label">Booking reference or plate number</label>
+            <div class="lookup-input-row">
+                <input id="query"
+                       name="query"
+                       value="@Model.Query"
+                       class="form-control form-control-lg"
+                       required
+                       placeholder="GRJ-2026-0001 or DHA-2026" />
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
             </div>
         </form>
     </div>
-</div>
+</section>
