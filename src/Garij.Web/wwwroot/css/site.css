@@ -1,5 +1,59 @@
+/* ==========================================================================
+   Garij Global Stylesheet
+   Fonts: Montserrat (Regular 400, Italic 400i, SemiBold 600, Bold 700/800)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@font-face {
+    font-family: 'Montserrat';
+    src: local('Montserrat Regular'),
+         url('../fonts/Montserrat-Regular.woff2') format('woff2'),
+         url('../fonts/Montserrat-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: local('Montserrat Italic'),
+         url('../fonts/Montserrat-Italic.woff2') format('woff2'),
+         url('../fonts/Montserrat-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: local('Montserrat SemiBold'),
+         url('../fonts/Montserrat-SemiBold.woff2') format('woff2'),
+         url('../fonts/Montserrat-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: local('Montserrat Bold'),
+         url('../fonts/Montserrat-Bold.woff2') format('woff2'),
+         url('../fonts/Montserrat-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --bs-body-font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 html {
     font-size: 14px;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    position: relative;
+    min-height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -8,17 +62,18 @@ html {
     }
 }
 
+body {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin-bottom: 60px;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-    position: relative;
-    min-height: 100%;
-}
-
-body {
-    margin-bottom: 60px;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
@@ -30,6 +85,7 @@ body {
     text-align: start;
 }
 
+/* Public Lookup Section */
 .public-lookup-shell {
     max-width: 920px;
     margin: 0 auto;
@@ -44,12 +100,13 @@ body {
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
-    .public-lookup-panel.compact {
-        box-shadow: none;
-    }
+.public-lookup-panel.compact {
+    box-shadow: none;
+}
 
 .lookup-heading h1 {
     font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 800;
     line-height: 1;
     margin-bottom: 0.75rem;
 }
@@ -102,15 +159,15 @@ body {
     gap: 1rem;
 }
 
-    .vehicle-summary h2 {
-        font-size: 1.75rem;
-        margin: 0;
-    }
+.vehicle-summary h2 {
+    font-size: 1.75rem;
+    margin: 0;
+}
 
-    .vehicle-summary p {
-        color: #52616f;
-        margin: 0.25rem 0 0;
-    }
+.vehicle-summary p {
+    color: #52616f;
+    margin: 0.25rem 0 0;
+}
 
 .status-pill {
     font-size: 0.9rem;
@@ -123,21 +180,21 @@ body {
     gap: 0.75rem;
 }
 
-    .job-meta-grid > div {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 0.85rem;
-    }
+.job-meta-grid > div {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.85rem;
+}
 
-    .job-meta-grid span,
-    .job-meta-grid strong {
-        display: block;
-    }
+.job-meta-grid span,
+.job-meta-grid strong {
+    display: block;
+}
 
-    .job-meta-grid span {
-        color: #64748b;
-        font-size: 0.82rem;
-    }
+.job-meta-grid span {
+    color: #64748b;
+    font-size: 0.82rem;
+}
 
 .status-timeline {
     list-style: none;
@@ -145,23 +202,23 @@ body {
     padding: 0;
 }
 
-    .status-timeline li {
-        display: grid;
-        grid-template-columns: 1.25rem 1fr;
-        gap: 0.75rem;
-        position: relative;
-        padding-bottom: 1rem;
-    }
+.status-timeline li {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0.75rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
 
-        .status-timeline li:not(:last-child)::before {
-            content: "";
-            position: absolute;
-            top: 1.25rem;
-            left: 0.55rem;
-            width: 2px;
-            height: calc(100% - 0.25rem);
-            background: #d9e2ec;
-        }
+.status-timeline li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 1.25rem;
+    left: 0.55rem;
+    width: 2px;
+    height: calc(100% - 0.25rem);
+    background: #d9e2ec;
+}
 
 .timeline-dot {
     width: 1.1rem;
@@ -226,9 +283,9 @@ body {
     min-width: 8rem;
 }
 
-    .history-date small {
-        color: #64748b;
-    }
+.history-date small {
+    color: #64748b;
+}
 
 @media (min-width: 640px) {
     .lookup-input-row {

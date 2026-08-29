@@ -1,0 +1,205 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Garij Intelligent Vehicle Workshop</title>
+    <meta name="description" content="Garij - Creative & Professional Mechanic Services, Vehicle Renovation, Tuning, and Intelligent Fleet & Service Management." />
+    
+    <!-- Google Fonts: Montserrat (Loaded with all weights and display=swap) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS & Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <!-- Landing Custom Stylesheet -->
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+</head>
+<body class="landing-page-body">
+
+    <!-- 1. Tachometer Preloader Loading Animation -->
+    <div id="page-preloader">
+        <div class="preloader-tachometer">
+            <div class="tachometer-dial"></div>
+            <div class="tachometer-inner-circle"></div>
+            <div class="tachometer-needle"></div>
+            <div class="tachometer-center"></div>
+        </div>
+        <div class="preloader-brand">GARIJ</div>
+        <div class="preloader-text">INITIALIZING SYSTEMS... READY</div>
+    </div>
+
+    <!-- 2. Sticky Main Navigation Bar with Rounded Glowing Hover Effects -->
+    <nav class="navbar navbar-expand-lg main-navbar-sticky py-3">
+        <div class="container-fluid px-lg-5">
+            <!-- Brand Logo -->
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-gear-wide-connected text-info"></i>
+                <span>GARIJ</span>
+                <span class="brand-glow-dot"></span>
+            </a>
+
+            <!-- Mobile Toggler -->
+            <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbar" aria-controls="landingNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list text-light fs-2"></i>
+            </button>
+
+            <!-- Navigation Links & Rounded Action Buttons -->
+            <div class="collapse navbar-collapse" id="landingNavbar">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#hero">HOME</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">ABOUT</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#services">SERVICES</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">TESTIMONIALS</a>
+                    </li>
+                </ul>
+
+                <!-- Dedicated Rounded Glowing Action Buttons: Status Lookup, Register, Login -->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Status Lookup Button (Smoothly brings down to Landing Page Status Lookup section) -->
+                    <a href="#status-tracker" class="btn-nav-glow-lookup" title="Track your vehicle service progress">
+                        <i class="bi bi-search"></i>
+                        <span>Status Lookup</span>
+                    </a>
+
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        var isAdmin = User.IsInRole("Admin");
+                        var isMechanic = User.IsInRole("Mechanic");
+                        var isFrontDesk = User.IsInRole("FrontDesk");
+
+                        if (isAdmin || isFrontDesk)
+                        {
+                            <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        }
+                        else if (isMechanic)
+                        {
+                            <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login">
+                                <i class="bi bi-wrench"></i> Job Board
+                            </a>
+                        }
+                        <a asp-controller="Account" asp-action="Logout" class="btn-nav-glow-register">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    }
+                    else
+                    {
+                        <!-- Register Button with Rounded Glowing Border -->
+                        <a asp-controller="Account" asp-action="Register" class="btn-nav-glow-register">
+                            <i class="bi bi-person-plus"></i>
+                            <span>Register</span>
+                        </a>
+
+                        <!-- Login Button with Rounded Glowing Cyan Aura -->
+                        <a asp-controller="Account" asp-action="Login" class="btn-nav-glow-login">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Login</span>
+                        </a>
+                    }
+
+                    <!-- Make Appointment CTA -->
+                    <a href="#status-tracker" class="btn-nav-appointment">
+                        <span>MAKE APPOINTMENT</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- 3. Automotive Luxury Dark Footer -->
+    <footer class="automotive-footer">
+        <div class="container px-lg-5">
+            <div class="row g-4">
+                <!-- Col 1: Brand & Bio -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-brand-title">
+                        <i class="bi bi-gear-wide-connected text-info me-2"></i>GARIJ
+                    </div>
+                    <p class="small text-secondary mb-3">
+                        Garij is an intelligent, full-spectrum vehicle service center management platform providing precision diagnostic tuning, multi-point restoration, and real-time transparent tracking.
+                    </p>
+                    <div class="d-flex gap-3 text-info fs-5">
+                        <a href="#" class="text-info"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-info"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-info"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="text-info"><i class="bi bi-youtube"></i></a>
+                    </div>
+                </div>
+
+                <!-- Col 2: Quick Links -->
+                <div class="col-lg-2 col-md-6">
+                    <h5 class="footer-heading">NAVIGATION</h5>
+                    <ul class="footer-links-list">
+                        <li><a href="#hero">Home</a></li>
+                        <li><a href="#about">About Workshop</a></li>
+                        <li><a href="#services">Our Services</a></li>
+                        <li><a href="#testimonials">Testimonials</a></li>
+                        <li><a href="#status-tracker">Track Service Status</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Workshop Services -->
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="footer-heading">SERVICES</h5>
+                    <ul class="footer-links-list">
+                        <li><a href="#services">Complete Engine Overhaul</a></li>
+                        <li><a href="#services">Performance ECU Tuning</a></li>
+                        <li><a href="#services">Brembo & Disc Brakes</a></li>
+                        <li><a href="#services">Transmission Fluid & Parts</a></li>
+                        <li><a href="#services">Neon & Custom Lighting</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Contact & Working Hours -->
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="footer-heading">HOURS & LOCATION</h5>
+                    <p class="small mb-1 text-light"><i class="bi bi-geo-alt text-info me-2"></i>9332 Bernier Dam, Miami, USA</p>
+                    <p class="small mb-1 text-light"><i class="bi bi-telephone text-info me-2"></i>0-800-123-4567</p>
+                    <p class="small mb-3 text-light"><i class="bi bi-envelope text-info me-2"></i>Carrepair@example.com</p>
+                    <div class="p-2 rounded-3 bg-dark border border-secondary border-opacity-25 small">
+                        <span class="text-info fw-bold d-block">WORKSHOP HOURS:</span>
+                        <span>Mon - Sat: 08:00 AM - 08:00 PM</span><br/>
+                        <span class="text-muted">Sunday: Emergency On-Call</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Copyright Bar -->
+            <div class="footer-bottom-bar d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    &copy; 2026 <strong>GARIJ</strong> - All Rights Reserved. Creative & Professional Automotive Engineering.
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="#status-tracker" class="text-secondary text-decoration-none small">Status Lookup</a>
+                    <a asp-controller="Account" asp-action="Login" class="text-secondary text-decoration-none small">Staff Portal</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/landing.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
