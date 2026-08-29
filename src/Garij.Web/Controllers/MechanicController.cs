@@ -103,6 +103,81 @@ public class MechanicController : Controller
         return RedirectToAction("Details", "ServiceJob", new { id = serviceJobId });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> JobBoard(int? mechanicId)
+    {
+        var currentUser = await GetCurrentStaffUserAsync();
+        
+        // If logged-in user is a mechanic and no specific mechanic filter passed, default to current user's ID
+        if (!mechanicId.HasValue && currentUser != null && currentUser.Role == UserRole.Mechanic)
+        {
+            mechanicId = currentUser.Id;
+        }
+
+        IEnumerable<ServiceJobDto> jobs;
+        if (mechanicId.HasValue && mechanicId.Value > 0)
+        {
+            jobs = await _serviceJobService.GetJobsByMechanicAsync(mechanicId.Value);
+            ViewBag.SelectedMechanicId = mechanicId.Value;
+        }
+        else
+        {
+            jobs = await _serviceJobService.GetAllServiceJobsAsync();
+            ViewBag.SelectedMechanicId = null;
+        }
+
+        await PopulateMechanicsDropDownList(mechanicId);
+        ViewBag.CurrentStaffUser = currentUser;
+
+        return View(jobs);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStatus(int serviceJobId, JobStatus newStatus, int? mechanicId)
+    {
+        try
+        {
+            await _serviceJobService.UpdateServiceJobStatusAsync(serviceJobId, newStatus);
+            TempData["SuccessMessage"] = $"Job #{serviceJobId} status updated to {newStatus}.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveNotes(int serviceJobId, string diagnosticNotes, int? mechanicId)
+    {
+        try
+        {
+            await _serviceJobService.SaveDiagnosticNotesAsync(serviceJobId, diagnosticNotes);
+            TempData["SuccessMessage"] = "Diagnostic notes updated successfully.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+    }
+
+    private async Task<Garij.Domain.Entities.User?> GetCurrentStaffUserAsync()
+    {
+        var email = User.Identity?.Name;
+        if (string.IsNullOrEmpty(email))
+        {
+            return null;
+        }
+
+        var users = await _userRepository.GetAllAsync();
+        return users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task PopulateMechanicsDropDownList(object? selectedMechanic = null)
     {
         var users = await _userRepository.GetAllAsync();

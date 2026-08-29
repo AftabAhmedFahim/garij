@@ -53,4 +53,15 @@ public class ServiceJobRepository : Repository<ServiceJob>, IServiceJobRepositor
             .Where(sj => sj.Status == status)
             .OrderByDescending(sj => sj.CreatedAt)
             .ToListAsync();
+
+    public async Task<IEnumerable<ServiceJob>> GetJobsByMechanicAsync(int mechanicUserId) =>
+        await DbSet.Include(sj => sj.Vehicle)
+            .Include(sj => sj.Customer)
+            .Include(sj => sj.MechanicAssignments)
+                .ThenInclude(ma => ma.User)
+            .Include(sj => sj.JobPartsUsed)
+                .ThenInclude(jpu => jpu.Part)
+            .Where(sj => sj.MechanicAssignments.Any(ma => ma.UserId == mechanicUserId))
+            .OrderByDescending(sj => sj.CreatedAt)
+            .ToListAsync();
 }
