@@ -1,18 +1,23 @@
+using Garij.Application.Configuration;
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
+using Garij.Domain.Entities;
 using Garij.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Options;
 
 namespace Garij.Application.Services;
 
 public class BillingService : IBillingService
 {
     private readonly GarijDbContext _context;
+    private readonly decimal _taxRatePercent;
 
-    public BillingService(GarijDbContext context)
+    public BillingService(GarijDbContext context, IOptions<BillingSettings> billingSettings)
     {
         _context = context;
+        _taxRatePercent = billingSettings.Value.TaxRatePercent;
     }
 
     /// <summary>
@@ -21,6 +26,27 @@ public class BillingService : IBillingService
     /// SaveChangesAsync call) enlist in it and roll back together on failure.
     /// </summary>
     private Task<IDbContextTransaction> BeginTransactionAsync() => _context.Database.BeginTransactionAsync();
+
+    /// <summary>
+    /// Line totals (PriceAtBooking × Quantity, PriceAtUsage × QuantityUsed) are already at
+    /// 2-decimal money precision, so they are summed as-is with no intermediate rounding.
+    /// Only the resulting SubTotal is rounded (per line rounding first can drift the total
+    /// by a cent versus rounding once at the end), and TaxAmount is rounded off that
+    /// already-rounded SubTotal.
+    /// </summary>
+    private (decimal SubTotal, decimal TaxAmount, decimal TotalAmount) CalculateTotals(
+        IEnumerable<JobServiceDetail> serviceDetails,
+        IEnumerable<JobPartUsed> partsUsed)
+    {
+        var labourTotal = serviceDetails.Sum(jsd => jsd.PriceAtBooking * jsd.Quantity);
+        var partsTotal = partsUsed.Sum(jpu => jpu.PriceAtUsage * jpu.QuantityUsed);
+
+        var subTotal = Math.Round(labourTotal + partsTotal, 2, MidpointRounding.AwayFromZero);
+        var taxAmount = Math.Round(subTotal * (_taxRatePercent / 100m), 2, MidpointRounding.AwayFromZero);
+        var totalAmount = subTotal + taxAmount;
+
+        return (subTotal, taxAmount, totalAmount);
+    }
 
     /// <summary>
     /// Stage 1: structure only. Stage 2 will implement this to:
