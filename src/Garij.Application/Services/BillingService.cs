@@ -2,6 +2,7 @@ using Garij.Application.Configuration;
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
+using Garij.Domain.Enums;
 using Garij.Domain.Exceptions;
 using Garij.Infrastructure.Persistence;
 using Garij.Infrastructure.Repositories;
@@ -15,12 +16,21 @@ public class BillingService : IBillingService
 {
     private readonly GarijDbContext _context;
     private readonly IInvoiceRepository _invoiceRepository;
+    private readonly IServiceJobRepository _serviceJobRepository;
+    private readonly IServiceJobService _serviceJobService;
     private readonly decimal _taxRatePercent;
 
-    public BillingService(GarijDbContext context, IInvoiceRepository invoiceRepository, IOptions<BillingSettings> billingSettings)
+    public BillingService(
+        GarijDbContext context,
+        IInvoiceRepository invoiceRepository,
+        IServiceJobRepository serviceJobRepository,
+        IServiceJobService serviceJobService,
+        IOptions<BillingSettings> billingSettings)
     {
         _context = context;
         _invoiceRepository = invoiceRepository;
+        _serviceJobRepository = serviceJobRepository;
+        _serviceJobService = serviceJobService;
         _taxRatePercent = billingSettings.Value.TaxRatePercent;
     }
 
@@ -90,24 +100,151 @@ public class BillingService : IBillingService
     }
 
     /// <summary>
-    /// Stage 1: structure only. Stage 2 will implement this to:
-    /// - Compute SubTotal as the sum of JobServiceDetail (PriceAtBooking × Quantity)
-    ///   plus JobPartUsed (PriceAtUsage × QuantityUsed) for the given service job.
-    /// - Compute TaxAmount and TotalAmount from that SubTotal.
-    /// - Generate a unique InvoiceNumber.
-    /// - Wrap invoice creation and the job's transition to Completed status in a
-    ///   single EF Core transaction with rollback, so a mid-operation failure cannot
-    ///   deduct stock without producing an invoice (see ROADMAP.md Stage 2, Risk Watch).
+    /// Sums labour and parts, then wraps invoice creation and the job's transition to
+    /// Completed in one transaction: a failure anywhere between the insert and the status
+    /// update rolls back both, so a mid-operation crash can never leave stock deducted
+    /// (already committed by the parts-logging step, before this ever runs) with no invoice,
+    /// or an invoice with the job still not marked Completed. See ROADMAP.md Stage 2, Risk
+    /// Watch, and does not perform transition-legality validation — that is
+    /// ValidateStatusTransition's job, not built yet (see the Stage 2 readiness report).
     /// </summary>
-    public Task<InvoiceDto> GenerateInvoiceAsync(int serviceJobId) => throw new NotImplementedException();
+    public async Task<InvoiceDto> GenerateInvoiceAsync(int serviceJobId)
+    {
+        var job = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobId)
+            ?? throw new NotFoundException(nameof(ServiceJob), serviceJobId);
 
-    public Task<InvoiceDto?> GetInvoiceByIdAsync(int id) => throw new NotImplementedException();
+        await EnsureNotAlreadyInvoicedAsync(serviceJobId);
+        EnsureHasLineItems(job);
 
-    public Task<InvoiceDto?> GetInvoiceByServiceJobAsync(int serviceJobId) => throw new NotImplementedException();
+        var (subTotal, taxAmount, totalAmount) = CalculateTotals(job.JobServiceDetails, job.JobPartsUsed);
+        var invoiceNumber = await GenerateUniqueInvoiceNumberAsync();
 
-    public Task<IEnumerable<InvoiceDto>> GetAllInvoicesAsync() => throw new NotImplementedException();
+        var invoice = new Invoice
+        {
+            ServiceJobId = serviceJobId,
+            InvoiceNumber = invoiceNumber,
+            SubTotal = subTotal,
+            TaxAmount = taxAmount,
+            TotalAmount = totalAmount,
+            PaymentStatus = PaymentStatus.Pending,
+            IssuedAt = DateTime.UtcNow
+        };
+
+        await using var transaction = await BeginTransactionAsync();
+        try
+        {
+            await _invoiceRepository.AddAsync(invoice);
+            await _invoiceRepository.SaveChangesAsync();
+
+            await _serviceJobService.UpdateServiceJobStatusAsync(serviceJobId, JobStatus.Completed);
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+
+        return await MapToDetailedDtoAsync(invoice, job);
+    }
+
+    public async Task<InvoiceDto?> GetInvoiceByIdAsync(int id)
+    {
+        var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(id);
+        return invoice is null ? null : await MapToDetailedDtoAsync(invoice);
+    }
+
+    public async Task<InvoiceDto?> GetInvoiceByServiceJobAsync(int serviceJobId)
+    {
+        var invoice = await _invoiceRepository.GetByServiceJobIdAsync(serviceJobId);
+        if (invoice is null)
+        {
+            return null;
+        }
+
+        var withPayments = await _invoiceRepository.GetByIdWithPaymentsAsync(invoice.Id);
+        return await MapToDetailedDtoAsync(withPayments!);
+    }
+
+    public async Task<IEnumerable<InvoiceDto>> GetAllInvoicesAsync()
+    {
+        var invoices = await _invoiceRepository.GetAllAsync();
+        return invoices.Select(MapToSummaryDto);
+    }
 
     public Task<PaymentTransactionDto> RecordPaymentAsync(PaymentTransactionDto payment) => throw new NotImplementedException();
 
     public Task<IEnumerable<PaymentTransactionDto>> GetPaymentsByInvoiceAsync(int invoiceId) => throw new NotImplementedException();
+
+    /// <summary>Full breakdown (line items, payment history, running balance) for a single invoice view.</summary>
+    private async Task<InvoiceDto> MapToDetailedDtoAsync(Invoice invoice, ServiceJob? job = null)
+    {
+        job ??= await _serviceJobRepository.GetByIdWithDetailsAsync(invoice.ServiceJobId);
+
+        var serviceLines = job?.JobServiceDetails.Select(jsd => new InvoiceLineItemDto
+        {
+            Description = jsd.ServiceCatalog?.Name ?? "Service",
+            Quantity = jsd.Quantity,
+            UnitPrice = jsd.PriceAtBooking,
+            LineTotal = jsd.PriceAtBooking * jsd.Quantity
+        }).ToList() ?? new List<InvoiceLineItemDto>();
+
+        var partLines = job?.JobPartsUsed.Select(jpu => new InvoiceLineItemDto
+        {
+            Description = jpu.Part?.Name ?? "Part",
+            Quantity = jpu.QuantityUsed,
+            UnitPrice = jpu.PriceAtUsage,
+            LineTotal = jpu.PriceAtUsage * jpu.QuantityUsed
+        }).ToList() ?? new List<InvoiceLineItemDto>();
+
+        var payments = invoice.PaymentTransactions
+            .OrderBy(p => p.PaidAt)
+            .Select(MapPaymentToDto)
+            .ToList();
+        var amountPaid = payments.Sum(p => p.Amount);
+
+        return new InvoiceDto
+        {
+            Id = invoice.Id,
+            ServiceJobId = invoice.ServiceJobId,
+            InvoiceNumber = invoice.InvoiceNumber,
+            SubTotal = invoice.SubTotal,
+            TaxAmount = invoice.TaxAmount,
+            TotalAmount = invoice.TotalAmount,
+            PaymentStatus = invoice.PaymentStatus,
+            IssuedAt = invoice.IssuedAt,
+            BookingReference = job?.BookingReference ?? string.Empty,
+            CustomerName = job?.Customer?.FullName ?? string.Empty,
+            VehicleDescription = job is null ? string.Empty : $"{job.Vehicle.Year} {job.Vehicle.Make} {job.Vehicle.Model}".Trim(),
+            ServiceLines = serviceLines,
+            PartLines = partLines,
+            Payments = payments,
+            AmountPaid = amountPaid,
+            OutstandingBalance = invoice.TotalAmount - amountPaid
+        };
+    }
+
+    /// <summary>Header-only shape for the invoice list view — avoids an N+1 job/payment load per row.</summary>
+    private static InvoiceDto MapToSummaryDto(Invoice invoice) => new()
+    {
+        Id = invoice.Id,
+        ServiceJobId = invoice.ServiceJobId,
+        InvoiceNumber = invoice.InvoiceNumber,
+        SubTotal = invoice.SubTotal,
+        TaxAmount = invoice.TaxAmount,
+        TotalAmount = invoice.TotalAmount,
+        PaymentStatus = invoice.PaymentStatus,
+        IssuedAt = invoice.IssuedAt
+    };
+
+    private static PaymentTransactionDto MapPaymentToDto(PaymentTransaction payment) => new()
+    {
+        Id = payment.Id,
+        InvoiceId = payment.InvoiceId,
+        Amount = payment.Amount,
+        PaymentMethod = payment.PaymentMethod,
+        TransactionReference = payment.TransactionReference,
+        PaidAt = payment.PaidAt
+    };
 }
