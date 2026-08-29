@@ -73,6 +73,16 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-08-29] - Stage 2 Business Logic & Mechanic Workflows (Rakibul Islam Emon)
+- **Job Status State Machine (FR-7)**: Implemented strict status state machine transition validation in `ServiceJobService.ValidateStatusTransition`. Allowed flow: `Requested` &rarr; `InspectionPending` &rarr; `CustomerApprovalNeeded` &rarr; `InProgress` &rarr; `Completed`. `Cancelled` is accessible from any active non-completed state. Invalid transitions trigger `BusinessRuleException` ("BR-007").
+- **Logged Parts Completion Pre-Condition (FR-8)**: Implemented hard business rule in `ServiceJobService` preventing jobs from transitioning to `Completed` status unless at least one part used is recorded in `JobPartsUsed`. Rejections throw `BusinessRuleException` ("BR-008").
+- **Lead Mechanic Uniqueness Constraint (FR-3)**: Enforced single Lead mechanic constraint in `AssignMechanicAsync`. Attempting to assign a second lead technician throws `BusinessRuleException` ("BR-003").
+- **Touch-Friendly Mechanic Job Board (FR-10)**: Created `MechanicController.JobBoard` and touch-optimized view (`Views/Mechanic/JobBoard.cshtml`) featuring responsive cards, mechanic filter dropdown, inline diagnostic notes editor, log parts quick link, and status action buttons.
+- **Repository & Service Contracts**: Extended `IServiceJobRepository`, `ServiceJobRepository`, `IServiceJobService`, and `ServiceJobService` with `GetJobsByMechanicAsync(int mechanicUserId)` and `SaveDiagnosticNotesAsync(int serviceJobId, string notes)`.
+- **Navigation Layout Update**: Added "Job Board" link to top navigation bar in `_Layout.cshtml` for authenticated mechanics, front desk staff, and admins.
+- **Comprehensive Unit Testing**: Expanded `ServiceJobServiceTests.cs` with test cases for valid transitions, invalid transition rejections, parts completion guards, and lead mechanic uniqueness. Verified all 48 solution unit/integration tests pass (`dotnet test`).
+- **Git Branching**: Committed and pushed changes to remote branch `feature/business-logic-mechanic-workflows` using conventional commits.
+
 ### [2026-08-26] - Customer Direct Link Reconciliation, Default Route Update & Solution Cleanup
 - **Customer → ServiceJob Direct Link**: Added `CustomerId` FK and `Customer` navigation property to `ServiceJob.cs` and `ServiceJobs` collection to `Customer.cs` matching report ERD. Configured `FK_ServiceJobs_Customers_CustomerId` in `ServiceJobConfiguration`.
 - **Default Route Landing**: Updated default route in `Program.cs` to `Dashboard` (`{controller=Dashboard}/{action=Index}`), routing unauthenticated users to `/Account/Login`.
