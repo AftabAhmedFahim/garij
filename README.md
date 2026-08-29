@@ -41,6 +41,17 @@ The project follows a clean **3-Layer Architecture** (Presentation, Application,
 
 ---
 
+## 🌟 Key Features & Business Workflows
+
+- **Touch-Friendly Mechanic Job Board & State Machine**: Mobile-optimized dashboard for mechanics to manage assigned repair tasks, record diagnostic notes, and advance jobs through strict, validated state transitions (`Requested` &rarr; `InspectionPending` &rarr; `CustomerApprovalNeeded` &rarr; `InProgress` &rarr; `Completed`).
+- **Enforced Business Integrity Rules**: Hard pre-condition validation preventing job completion without logged parts used (`BR-008`), and enforcing lead mechanic uniqueness (`BR-003`).
+- **Transactional Invoice Generation**: Automated invoice calculation summing labor and logged parts with atomic database rollback protections (`BR-007`).
+- **Customer & Vehicle Intake**: Streamlined registration, unique booking reference generation (`GRJ-2026-XXXX`), and service history tracking.
+- **Parts Inventory & Reorder Alerts**: Inventory management with atomic stock deduction and automatic low-stock alerts.
+- **Public Booking Status Portal**: Mobile-first public portal for customers to track real-time repair progress via booking reference or license plate.
+
+---
+
 ## 📋 Prerequisites
 
 Before running the project, ensure you have installed:
