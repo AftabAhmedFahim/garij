@@ -2,7 +2,9 @@ using Garij.Application.Configuration;
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
+using Garij.Domain.Exceptions;
 using Garij.Infrastructure.Persistence;
+using Garij.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
@@ -12,11 +14,13 @@ namespace Garij.Application.Services;
 public class BillingService : IBillingService
 {
     private readonly GarijDbContext _context;
+    private readonly IInvoiceRepository _invoiceRepository;
     private readonly decimal _taxRatePercent;
 
-    public BillingService(GarijDbContext context, IOptions<BillingSettings> billingSettings)
+    public BillingService(GarijDbContext context, IInvoiceRepository invoiceRepository, IOptions<BillingSettings> billingSettings)
     {
         _context = context;
+        _invoiceRepository = invoiceRepository;
         _taxRatePercent = billingSettings.Value.TaxRatePercent;
     }
 
@@ -46,6 +50,43 @@ public class BillingService : IBillingService
         var totalAmount = subTotal + taxAmount;
 
         return (subTotal, taxAmount, totalAmount);
+    }
+
+    /// <summary>Mirrors ServiceJobService.GenerateUniqueBookingReferenceAsync's candidate-loop shape.</summary>
+    private async Task<string> GenerateUniqueInvoiceNumberAsync()
+    {
+        var year = DateTime.UtcNow.Year;
+        var existingNumbers = (await _invoiceRepository.GetAllAsync())
+            .Select(i => i.InvoiceNumber)
+            .ToHashSet();
+
+        var count = existingNumbers.Count + 1;
+        string candidate;
+        do
+        {
+            candidate = $"INV-{year}-{count:D4}";
+            count++;
+        }
+        while (existingNumbers.Contains(candidate));
+
+        return candidate;
+    }
+
+    private async Task EnsureNotAlreadyInvoicedAsync(int serviceJobId)
+    {
+        var existing = await _invoiceRepository.GetByServiceJobIdAsync(serviceJobId);
+        if (existing is not null)
+        {
+            throw new BusinessRuleException("BR-010", $"Service job {serviceJobId} already has invoice '{existing.InvoiceNumber}'.");
+        }
+    }
+
+    private static void EnsureHasLineItems(ServiceJob job)
+    {
+        if (job.JobServiceDetails.Count == 0 && job.JobPartsUsed.Count == 0)
+        {
+            throw new BusinessRuleException("BR-011", $"Service job {job.Id} has no billable line items — log services or parts before generating an invoice.");
+        }
     }
 
     /// <summary>
