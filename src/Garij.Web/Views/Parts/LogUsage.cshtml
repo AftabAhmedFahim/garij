@@ -1,15 +1,14 @@
-@model Garij.Application.DTOs.MechanicAssignmentDto
-@using Garij.Domain.Enums
+@model Garij.Application.DTOs.JobPartUsedDto
 @using Garij.Application.DTOs
 
 @{
-    ViewData["Title"] = "Assign Mechanic";
+    ViewData["Title"] = "Log Parts Used";
     var job = ViewBag.ServiceJob as ServiceJobDto;
 }
 
 <div class="app-page-header">
     <div>
-        <h1 class="app-page-title">Assign Mechanic to Service Job</h1>
+        <h1 class="app-page-title">Log Parts Used</h1>
     </div>
 </div>
 
@@ -22,31 +21,30 @@
                     <div class="fw-bold text-info mb-1">Booking Reference: @job.BookingReference</div>
                     <div class="small text-white"><strong>Vehicle:</strong> @job.VehiclePlateNumber (@job.VehicleDescription)</div>
                     <div class="small text-white"><strong>Customer:</strong> @job.CustomerName</div>
-                    <div class="small text-white"><strong>Status:</strong> <span class="app-badge app-badge-neutral">@job.Status</span></div>
                 </div>
             }
 
-            <form asp-action="Assign" method="post">
+            <form asp-action="LogUsage" method="post">
                 <input type="hidden" asp-for="ServiceJobId" />
                 <div asp-validation-summary="ModelOnly" class="app-alert-danger" role="alert"></div>
 
                 <div class="app-form-group">
-                    <label asp-for="UserId" class="app-form-label">Select Mechanic</label>
-                    <select asp-for="UserId" asp-items="ViewBag.Mechanics" class="app-form-select">
-                        <option value="">-- Choose Mechanic --</option>
+                    <label asp-for="PartId" class="app-form-label">Part</label>
+                    <select asp-for="PartId" asp-items="ViewBag.Parts" class="app-form-select">
+                        <option value="">-- Choose Part --</option>
                     </select>
-                    <span asp-validation-for="UserId" class="app-field-error"></span>
+                    <span asp-validation-for="PartId" class="app-field-error"></span>
                 </div>
 
                 <div class="app-form-group">
-                    <label asp-for="RoleInJob" class="app-form-label">Role in Job</label>
-                    <select asp-for="RoleInJob" asp-items="Html.GetEnumSelectList<RoleInJob>()" class="app-form-select"></select>
-                    <span asp-validation-for="RoleInJob" class="app-field-error"></span>
+                    <label asp-for="QuantityUsed" class="app-form-label">Quantity Used</label>
+                    <input asp-for="QuantityUsed" class="app-form-control" placeholder="e.g. 2" min="1" />
+                    <span asp-validation-for="QuantityUsed" class="app-field-error"></span>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     <a asp-controller="ServiceJob" asp-action="Details" asp-route-id="@Model.ServiceJobId" class="app-btn app-btn-outline">Cancel</a>
-                    <button type="submit" class="app-btn app-btn-success"><i class="bi bi-check-lg"></i> Assign Mechanic</button>
+                    <button type="submit" class="app-btn app-btn-primary"><i class="bi bi-check-lg"></i> Log Part Usage</button>
                 </div>
             </form>
         </div>
@@ -54,5 +52,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
 }

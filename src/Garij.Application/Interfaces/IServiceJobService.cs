@@ -23,6 +23,8 @@ public interface IServiceJobService
 
     Task<MechanicAssignmentDto> AssignMechanicAsync(int serviceJobId, int userId, RoleInJob roleInJob);
 
+    Task<MechanicAssignmentDto> UpdateMechanicAssignmentRoleAsync(int assignmentId, RoleInJob roleInJob);
+
     Task RemoveMechanicAssignmentAsync(int assignmentId);
 
     Task<IEnumerable<MechanicAssignmentDto>> GetAssignmentsByServiceJobAsync(int serviceJobId);

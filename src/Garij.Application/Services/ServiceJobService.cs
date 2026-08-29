@@ -103,7 +103,7 @@ public class ServiceJobService : IServiceJobService
 
         if (entity.Status != serviceJobDto.Status)
         {
-            ValidateStatusTransition(entity.Status, serviceJobDto.Status, entity);
+            ValidateStatusTransition(entity.Status, serviceJobDto.Status);
         }
 
         entity.JobType = serviceJobDto.JobType;
@@ -128,7 +128,7 @@ public class ServiceJobService : IServiceJobService
 
         if (entity.Status != status)
         {
-            ValidateStatusTransition(entity.Status, status, entity);
+            ValidateStatusTransition(entity.Status, status);
         }
 
         entity.Status = status;
@@ -195,6 +195,37 @@ public class ServiceJobService : IServiceJobService
         };
     }
 
+    public async Task<MechanicAssignmentDto> UpdateMechanicAssignmentRoleAsync(int assignmentId, RoleInJob roleInJob)
+    {
+        var assignment = await _mechanicAssignmentRepository.GetByIdAsync(assignmentId)
+            ?? throw new NotFoundException(nameof(MechanicAssignment), assignmentId);
+
+        if (roleInJob == RoleInJob.Lead && assignment.RoleInJob != RoleInJob.Lead)
+        {
+            var existingAssignments = await _mechanicAssignmentRepository.GetAssignmentsByJobIdAsync(assignment.ServiceJobId);
+            if (existingAssignments.Any(a => a.Id != assignmentId && a.RoleInJob == RoleInJob.Lead))
+            {
+                throw new BusinessRuleException("BR-003", "This job already has a Lead mechanic assigned. Exactly one Lead mechanic is allowed per job.");
+            }
+        }
+
+        assignment.RoleInJob = roleInJob;
+        _mechanicAssignmentRepository.Update(assignment);
+        await _mechanicAssignmentRepository.SaveChangesAsync();
+
+        var mechanic = await _userRepository.GetByIdAsync(assignment.UserId);
+
+        return new MechanicAssignmentDto
+        {
+            Id = assignment.Id,
+            ServiceJobId = assignment.ServiceJobId,
+            UserId = assignment.UserId,
+            MechanicName = mechanic?.FullName ?? "Unknown",
+            RoleInJob = assignment.RoleInJob,
+            AssignedAt = assignment.AssignedAt
+        };
+    }
+
     public async Task RemoveMechanicAssignmentAsync(int assignmentId)
     {
         var assignment = await _mechanicAssignmentRepository.GetByIdAsync(assignmentId)
@@ -236,7 +267,7 @@ public class ServiceJobService : IServiceJobService
         return MapToDto(entity);
     }
 
-    private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus, ServiceJob entity)
+    private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)
     {
         if (currentStatus == newStatus)
         {
@@ -270,11 +301,6 @@ public class ServiceJobService : IServiceJobService
         if (!isValid)
         {
             throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. Status must follow: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed.");
-        }
-
-        if (newStatus == JobStatus.Completed && !entity.JobPartsUsed.Any())
-        {
-            throw new BusinessRuleException("BR-008", "Job cannot be marked as Completed until at least one part used is logged.");
         }
     }
 

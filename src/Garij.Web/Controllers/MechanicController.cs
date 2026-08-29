@@ -86,6 +86,42 @@ public class MechanicController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> EditAssignment(int id, int serviceJobId)
+    {
+        var job = await _serviceJobService.GetServiceJobByIdAsync(serviceJobId);
+        if (job == null)
+        {
+            return NotFound();
+        }
+
+        var assignment = job.MechanicAssignments.FirstOrDefault(a => a.Id == id);
+        if (assignment == null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.ServiceJob = job;
+        return View(assignment);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditAssignment(int id, int serviceJobId, RoleInJob roleInJob)
+    {
+        try
+        {
+            await _serviceJobService.UpdateMechanicAssignmentRoleAsync(id, roleInJob);
+            TempData["SuccessMessage"] = "Mechanic role updated.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction("Details", "ServiceJob", new { id = serviceJobId });
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveAssignment(int id, int serviceJobId)

@@ -554,6 +554,45 @@ body.landing-page-body {
     transform: translateY(-2px);
 }
 
+/* Grouped nav dropdowns (Workshop / Jobs / Clients). Bootstrap's own JS already
+   handles click/tap-to-open plus full keyboard access (Enter/Space/arrows/Escape,
+   aria-expanded) - this only adds a hover reveal for pointer devices and matches
+   the dropdown panel to the dark navbar theme. */
+.main-navbar-sticky .dropdown-menu {
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(0, 168, 255, 0.25);
+    border-radius: 14px;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 168, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.main-navbar-sticky .dropdown-item {
+    color: #cbd5e1;
+    font-family: var(--font-primary);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    padding: 0.55rem 1rem;
+    transition: all 0.25s ease;
+}
+
+.main-navbar-sticky .dropdown-item:hover,
+.main-navbar-sticky .dropdown-item:focus {
+    background: rgba(0, 168, 255, 0.15);
+    color: #ffffff;
+}
+
+@media (hover: hover) {
+    .main-navbar-sticky .dropdown:hover > .dropdown-menu {
+        display: block;
+    }
+}
+
 /* ==========================================================================
    7. "YOU NEED RENOVATION?" Section (Matching Demo Layout)
    ========================================================================== */

@@ -60,7 +60,6 @@ public class PartsInventoryService : IPartsInventoryService
         entity.Name = part.Name;
         entity.PartNumber = part.PartNumber;
         entity.UnitPrice = part.UnitPrice;
-        entity.QuantityInStock = part.QuantityInStock;
         entity.ReorderLevel = part.ReorderLevel;
 
         _partRepository.Update(entity);

@@ -4,31 +4,31 @@
     ViewData["Title"] = "Generate Invoice";
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <h2 class="h5 card-title mb-0"><i class="bi bi-receipt-cutoff me-2"></i>Generate Invoice</h2>
-                </div>
-                <div class="card-body p-4">
-                    <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<div class="app-page-header">
+    <div>
+        <h1 class="app-page-title">Generate Invoice</h1>
+    </div>
+</div>
 
-                        <p>
-                            Generate an invoice for <strong>Service Job #@Model</strong>? This sums every logged
-                            service and part on the job, calculates tax, and marks the job
-                            <span class="badge bg-success">Completed</span>. This cannot be undone from here.
-                        </p>
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="app-card">
+            <h2 class="app-card-heading"><i class="bi bi-receipt-cutoff me-2 text-info"></i>Generate Invoice</h2>
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="app-alert-danger" role="alert"></div>
 
-                        <input type="hidden" name="serviceJobId" value="@Model" />
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-circle me-1"></i> Generate Invoice</button>
-                        </div>
-                    </form>
+                <p class="text-light">
+                    Generate an invoice for <strong>Service Job #@Model</strong>? This sums every logged
+                    service and part on the job, calculates tax, and marks the job
+                    <span class="app-badge app-badge-success">Completed</span>. This cannot be undone from here.
+                </p>
+
+                <input type="hidden" name="serviceJobId" value="@Model" />
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a asp-action="Index" class="app-btn app-btn-outline">Cancel</a>
+                    <button type="submit" class="app-btn app-btn-primary"><i class="bi bi-check-circle"></i> Generate Invoice</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>

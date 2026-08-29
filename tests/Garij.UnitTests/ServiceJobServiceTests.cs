@@ -181,9 +181,9 @@ public class ServiceJobServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateServiceJobStatusAsync_ThrowsBusinessRuleException_WhenCompletingWithoutParts()
+    public async Task UpdateServiceJobStatusAsync_SucceedsCompletion_WhenNoPartsLogged()
     {
-        // Arrange
+        // Arrange: a labor-only job (e.g. diagnostics/inspection) with nothing logged in JobPartsUsed.
         var customer = new Customer { FullName = "Test", Email = "noparts@test.com", PhoneNumber = "123", Address = "Test" };
         _context.Customers.Add(customer);
         await _context.SaveChangesAsync();
@@ -197,11 +197,12 @@ public class ServiceJobServiceTests : IDisposable
         await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.CustomerApprovalNeeded);
         await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.InProgress);
 
-        // Act & Assert: Attempting to complete without logged parts must fail with BR-008
-        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.Completed));
+        // Act: completing a job with zero parts logged must succeed (labor-only jobs are valid).
+        var completedJob = await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.Completed);
 
-        Assert.Equal("BR-008", ex.RuleCode);
+        // Assert
+        Assert.Equal(JobStatus.Completed, completedJob.Status);
+        Assert.NotNull(completedJob.CompletedAt);
     }
 
     [Fact]

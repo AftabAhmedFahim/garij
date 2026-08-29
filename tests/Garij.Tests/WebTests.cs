@@ -156,6 +156,8 @@ public class WebTests
         public Task<ServiceJobDto> UpdateServiceJobStatusAsync(int id, JobStatus status) => throw new NotImplementedException();
         public Task DeleteServiceJobAsync(int id) => throw new NotImplementedException();
         public Task<MechanicAssignmentDto> AssignMechanicAsync(int serviceJobId, int userId, RoleInJob roleInJob) => throw new NotImplementedException();
+
+        public Task<MechanicAssignmentDto> UpdateMechanicAssignmentRoleAsync(int assignmentId, RoleInJob roleInJob) => throw new NotImplementedException();
         public Task RemoveMechanicAssignmentAsync(int assignmentId) => throw new NotImplementedException();
         public Task<IEnumerable<MechanicAssignmentDto>> GetAssignmentsByServiceJobAsync(int serviceJobId) => throw new NotImplementedException();
         public Task<IEnumerable<ServiceJobDto>> GetJobsByMechanicAsync(int mechanicUserId) => throw new NotImplementedException();

@@ -2,4 +2,33 @@
     ViewData["Title"] = "Reports";
 }
 
-<h1>Reports</h1>
+<div class="app-page-header">
+    <div>
+        <h1 class="app-page-title">Reports</h1>
+        <p class="app-page-subtitle">Revenue, mechanic workload, and low-stock reporting.</p>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-3">
+    <div class="col">
+        <div class="app-card h-100">
+            <h5 class="text-white fw-bold mb-2"><i class="bi bi-graph-up-arrow me-2 text-info"></i>Revenue</h5>
+            <p class="app-page-subtitle">Monthly revenue breakdown.</p>
+            <a asp-action="Revenue" class="app-btn app-btn-outline app-btn-sm">Open</a>
+        </div>
+    </div>
+    <div class="col">
+        <div class="app-card h-100">
+            <h5 class="text-white fw-bold mb-2"><i class="bi bi-person-workspace me-2 text-info"></i>Mechanic Workload</h5>
+            <p class="app-page-subtitle">Jobs handled per mechanic.</p>
+            <a asp-action="MechanicWorkload" class="app-btn app-btn-outline app-btn-sm">Open</a>
+        </div>
+    </div>
+    <div class="col">
+        <div class="app-card h-100">
+            <h5 class="text-white fw-bold mb-2"><i class="bi bi-box-seam me-2 text-info"></i>Low Stock</h5>
+            <p class="app-page-subtitle">Parts at or below reorder level.</p>
+            <a asp-action="LowStock" class="app-btn app-btn-outline app-btn-sm">Open</a>
+        </div>
+    </div>
+</div>
