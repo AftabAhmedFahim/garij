@@ -403,6 +403,8 @@ public class BillingServiceTests
         public Task<ServiceJob?> GetByIdWithDetailsAsync(int id) => Task.FromResult(_jobs.GetValueOrDefault(id));
 
         public Task<IEnumerable<ServiceJob>> GetJobsByStatusAsync(JobStatus status) => throw new NotImplementedException();
+
+        public Task<IEnumerable<ServiceJob>> GetJobsByMechanicAsync(int mechanicUserId) => throw new NotImplementedException();
     }
 
     private sealed class FakeServiceJobService : IServiceJobService
@@ -429,5 +431,9 @@ public class BillingServiceTests
         public Task RemoveMechanicAssignmentAsync(int assignmentId) => throw new NotImplementedException();
 
         public Task<IEnumerable<MechanicAssignmentDto>> GetAssignmentsByServiceJobAsync(int serviceJobId) => throw new NotImplementedException();
+
+        public Task<IEnumerable<ServiceJobDto>> GetJobsByMechanicAsync(int mechanicUserId) => throw new NotImplementedException();
+
+        public Task<ServiceJobDto> SaveDiagnosticNotesAsync(int serviceJobId, string notes) => throw new NotImplementedException();
     }
 }

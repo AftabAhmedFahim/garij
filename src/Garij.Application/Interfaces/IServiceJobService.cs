@@ -26,4 +26,8 @@ public interface IServiceJobService
     Task RemoveMechanicAssignmentAsync(int assignmentId);
 
     Task<IEnumerable<MechanicAssignmentDto>> GetAssignmentsByServiceJobAsync(int serviceJobId);
+
+    Task<IEnumerable<ServiceJobDto>> GetJobsByMechanicAsync(int mechanicUserId);
+
+    Task<ServiceJobDto> SaveDiagnosticNotesAsync(int serviceJobId, string notes);
 }

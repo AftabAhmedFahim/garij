@@ -92,6 +92,11 @@ public class ServiceJobService : IServiceJobService
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobDto.Id)
             ?? throw new NotFoundException(nameof(ServiceJob), serviceJobDto.Id);
 
+        if (entity.Status != serviceJobDto.Status)
+        {
+            ValidateStatusTransition(entity.Status, serviceJobDto.Status, entity);
+        }
+
         entity.JobType = serviceJobDto.JobType;
         entity.Status = serviceJobDto.Status;
         entity.DiagnosticNotes = serviceJobDto.DiagnosticNotes?.Trim();
@@ -110,6 +115,11 @@ public class ServiceJobService : IServiceJobService
     {
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(id)
             ?? throw new NotFoundException(nameof(ServiceJob), id);
+
+        if (entity.Status != status)
+        {
+            ValidateStatusTransition(entity.Status, status, entity);
+        }
 
         entity.Status = status;
         if (status == JobStatus.Completed && entity.CompletedAt is null)
@@ -139,6 +149,18 @@ public class ServiceJobService : IServiceJobService
 
         var mechanic = await _userRepository.GetByIdAsync(userId)
             ?? throw new NotFoundException(nameof(User), userId);
+
+        var existingAssignments = await _mechanicAssignmentRepository.GetAssignmentsByJobIdAsync(serviceJobId);
+
+        if (existingAssignments.Any(a => a.UserId == userId))
+        {
+            throw new BusinessRuleException("BR-003", $"Mechanic '{mechanic.FullName}' is already assigned to this job.");
+        }
+
+        if (roleInJob == RoleInJob.Lead && existingAssignments.Any(a => a.RoleInJob == RoleInJob.Lead))
+        {
+            throw new BusinessRuleException("BR-003", "This job already has a Lead mechanic assigned. Exactly one Lead mechanic is allowed per job.");
+        }
 
         var assignment = new MechanicAssignment
         {
@@ -183,6 +205,66 @@ public class ServiceJobService : IServiceJobService
             RoleInJob = a.RoleInJob,
             AssignedAt = a.AssignedAt
         });
+    }
+
+    public async Task<IEnumerable<ServiceJobDto>> GetJobsByMechanicAsync(int mechanicUserId)
+    {
+        var jobs = await _serviceJobRepository.GetJobsByMechanicAsync(mechanicUserId);
+        return jobs.Select(MapToDto);
+    }
+
+    public async Task<ServiceJobDto> SaveDiagnosticNotesAsync(int serviceJobId, string notes)
+    {
+        var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobId)
+            ?? throw new NotFoundException(nameof(ServiceJob), serviceJobId);
+
+        entity.DiagnosticNotes = notes?.Trim();
+        _serviceJobRepository.Update(entity);
+        await _serviceJobRepository.SaveChangesAsync();
+
+        return MapToDto(entity);
+    }
+
+    private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus, ServiceJob entity)
+    {
+        if (currentStatus == newStatus)
+        {
+            return;
+        }
+
+        if (currentStatus == JobStatus.Completed)
+        {
+            throw new BusinessRuleException("BR-007", "Cannot change status of a job that is already Completed.");
+        }
+
+        if (currentStatus == JobStatus.Cancelled)
+        {
+            throw new BusinessRuleException("BR-007", "Cannot change status of a job that is Cancelled.");
+        }
+
+        if (newStatus == JobStatus.Cancelled)
+        {
+            return;
+        }
+
+        bool isValid = (currentStatus, newStatus) switch
+        {
+            (JobStatus.Requested, JobStatus.InspectionPending) => true,
+            (JobStatus.InspectionPending, JobStatus.CustomerApprovalNeeded) => true,
+            (JobStatus.CustomerApprovalNeeded, JobStatus.InProgress) => true,
+            (JobStatus.InProgress, JobStatus.Completed) => true,
+            _ => false
+        };
+
+        if (!isValid)
+        {
+            throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. Status must follow: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed.");
+        }
+
+        if (newStatus == JobStatus.Completed && !entity.JobPartsUsed.Any())
+        {
+            throw new BusinessRuleException("BR-008", "Job cannot be marked as Completed until at least one part used is logged.");
+        }
     }
 
     private async Task<string> GenerateUniqueBookingReferenceAsync()
