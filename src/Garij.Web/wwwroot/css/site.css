@@ -487,3 +487,125 @@ textarea.app-form-control {
         padding: 1.25rem;
     }
 }
+
+/* ==========================================================================
+   LIGHT MODE STYLING FOR INTERNAL APPLICATION PAGES
+   (Dashboard, Customers, Vehicles, Jobs, Mechanics, Parts, Billing, Admin)
+   ========================================================================== */
+[data-theme="light"] body.app-body {
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .app-page-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .app-page-subtitle {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .app-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .app-card-heading {
+    color: #0f172a !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .app-table-wrap {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .app-table {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .app-table th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .app-table td {
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] .app-table tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+[data-theme="light"] .app-btn-outline {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .app-btn-outline:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .app-bell-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .app-bell-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .dropdown-item {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .dropdown-item:hover {
+    background-color: #f1f5f9 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .dropdown-divider {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .app-stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .app-stat-value {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .app-stat-label {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .app-stat-icon {
+    background: rgba(2, 132, 199, 0.1) !important;
+    color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+}
+
+[data-theme="light"] .app-empty-state i {
+    color: rgba(2, 132, 199, 0.25) !important;
+}
+

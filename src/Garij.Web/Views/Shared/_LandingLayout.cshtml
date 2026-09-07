@@ -36,6 +36,15 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     
+    <!-- Color Scheme & Instant Theme Initializer (Prevents FOUC) -->
+    <meta name="color-scheme" content="dark light" />
+    <script>
+        (function () {
+            var theme = localStorage.getItem('garij_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <!-- Landing Custom Stylesheet -->
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
     <!-- Lottie Web Animation Engine -->
@@ -93,8 +102,14 @@
                 </ul>
             </div>
 
-            <!-- Right Actions: Buy Project + Status Pill + Auth Buttons + Offcanvas Menu Toggle -->
+            <!-- Right Actions: Theme Toggle + Buy Project + Status Pill + Auth Buttons + Offcanvas Menu Toggle -->
             <div class="d-flex align-items-center gap-2 gap-sm-3">
+                <!-- Theme Toggle Button -->
+                <button type="button" class="theme-toggle-btn" data-theme-toggle title="Toggle Light / Dark Mode" aria-label="Toggle Light and Dark Mode">
+                    <i class="bi bi-sun-fill theme-toggle-icon text-warning"></i>
+                    <span class="theme-toggle-text d-none d-md-inline">Light</span>
+                </button>
+
                 @if (!hasActiveLicense)
                 {
                     <!-- Buy Project Lifetime Button -->
@@ -253,6 +268,13 @@
                         <span>MAKE APPOINTMENT</span>
                     </a>
                 </div>
+            <!-- Theme Toggle & Quick Options in Drawer -->
+            <div class="p-3 my-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between" style="background: rgba(255, 255, 255, 0.03);">
+                <span class="small fw-bold text-uppercase text-secondary">Appearance</span>
+                <button type="button" class="theme-toggle-btn" data-theme-toggle title="Toggle Light / Dark Mode">
+                    <i class="bi bi-sun-fill theme-toggle-icon text-warning"></i>
+                    <span class="theme-toggle-text">Light</span>
+                </button>
             </div>
 
             <!-- Workshop Contact & Operating Hours Info in Drawer -->
@@ -364,6 +386,7 @@
     <!-- Core Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
     <script src="~/js/landing.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

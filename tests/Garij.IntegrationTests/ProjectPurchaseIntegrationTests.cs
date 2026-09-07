@@ -442,6 +442,29 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         var landingHtml = await landingPage.Content.ReadAsStringAsync();
         Assert.Contains(customGarageName, landingHtml);
     }
+
+    [Fact]
+    public async Task Pages_RenderThemeToggleAndInitializer_ForLightAndDarkMode()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act 1: Landing Page
+        var landingResponse = await client.GetAsync("/");
+        Assert.Equal(HttpStatusCode.OK, landingResponse.StatusCode);
+        var landingHtml = await landingResponse.Content.ReadAsStringAsync();
+
+        // Assert 1: Has theme initializer in head and toggle button
+        Assert.Contains("garij_theme", landingHtml);
+        Assert.Contains("data-theme-toggle", landingHtml);
+        Assert.Contains("theme-toggle.js", landingHtml);
+
+        // Act 2: Login Page
+        var loginResponse = await client.GetAsync("/Account/Login");
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var loginHtml = await loginResponse.Content.ReadAsStringAsync();
+        Assert.Contains("auth-page-body", loginHtml);
+    }
 }
 
 

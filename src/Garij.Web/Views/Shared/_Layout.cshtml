@@ -17,6 +17,15 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
+    <!-- Color Scheme & Instant Theme Initializer (Prevents FOUC) -->
+    <meta name="color-scheme" content="dark light" />
+    <script>
+        (function () {
+            var theme = localStorage.getItem('garij_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <!-- Landing design tokens (fonts, palette, navbar/button component classes) + app-specific components -->
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -136,6 +145,12 @@
                     </ul>
 
                     <div class="d-flex align-items-center flex-wrap gap-2">
+                        <!-- Theme Toggle Button -->
+                        <button type="button" class="theme-toggle-btn" data-theme-toggle title="Toggle Light / Dark Mode" aria-label="Toggle Light and Dark Mode">
+                            <i class="bi bi-sun-fill theme-toggle-icon text-warning"></i>
+                            <span class="theme-toggle-text d-none d-sm-inline">Light</span>
+                        </button>
+
                         @if (hasLicense)
                         {
                             <a asp-controller="Purchase" asp-action="Status" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 font-monospace d-inline-flex align-items-center gap-1" title="View Lifetime License Certificate">
@@ -185,6 +200,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

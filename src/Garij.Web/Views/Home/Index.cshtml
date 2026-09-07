@@ -116,9 +116,29 @@
                     </p>
                 </div>
 
-                <!-- Automotive Renovation & Mechanics Illustration -->
-                <div class="renovation-car-wrap">
+                <!-- Automotive Renovation & Mechanics Illustration (Dark Mode Only) -->
+                <div class="renovation-car-wrap dark-only">
                     <img src="~/images/renovation-mechanics-car.png" asp-append-version="true" alt="Automotive Renovation, Diagnostics and Performance Workshop Craftsmanship" class="renovation-car-img" />
+                </div>
+
+                <!-- Minimal Elegant Stats Grid for Light Mode (Zero Images, High Aesthetic) -->
+                <div class="renovation-minimal-metrics light-only">
+                    <div class="renovation-metric-tile">
+                        <div class="renovation-metric-num">25+</div>
+                        <div class="renovation-metric-label">Years Reputation</div>
+                    </div>
+                    <div class="renovation-metric-tile">
+                        <div class="renovation-metric-num">99.8%</div>
+                        <div class="renovation-metric-label">Diagnostic Accuracy</div>
+                    </div>
+                    <div class="renovation-metric-tile">
+                        <div class="renovation-metric-num">10k+</div>
+                        <div class="renovation-metric-label">Repairs Completed</div>
+                    </div>
+                    <div class="renovation-metric-tile">
+                        <div class="renovation-metric-num">100%</div>
+                        <div class="renovation-metric-label">Genuine Parts</div>
+                    </div>
                 </div>
             </div>
 
@@ -380,9 +400,14 @@
      ========================================================================== -->
 <section id="testimonials" class="testimonials-section">
     <div class="container px-lg-5">
-        <!-- Section Header with Winged Badge -->
+        <!-- Section Header with Winged Badge (Dark) & Minimal Emblem (Light) -->
         <div class="testimonials-header reveal">
-            <img src="~/images/testimonial-badge.svg" alt="Testimonials Winged Insignia" class="testimonials-badge-img" />
+            <img src="~/images/testimonial-badge.svg" alt="Testimonials Winged Insignia" class="testimonials-badge-img dark-only" />
+            <div class="light-only mb-3">
+                <span class="badge rounded-pill px-3 py-2 text-uppercase fw-bold letter-spacing-2" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.25);">
+                    <i class="bi bi-star-fill text-warning me-1"></i> Verified Client Endorsements
+                </span>
+            </div>
             <h2 class="testimonials-title">TESTIMONIALS</h2>
         </div>
 

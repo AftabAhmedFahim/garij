@@ -447,3 +447,81 @@ body.auth-page-body {
     }
 }
 
+/* ==========================================================================
+   LIGHT MODE STYLING FOR AUTH PAGES (Login / Register)
+   Zero images, clean minimal white card, bright energetic theme accents
+   ========================================================================== */
+[data-theme="light"] body.auth-page-body {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .auth-shell {
+    background: radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.08) 0%, rgba(248, 250, 252, 1) 60%) !important;
+}
+
+[data-theme="light"] .auth-bg-backdrop {
+    display: none !important;
+    background-image: none !important;
+}
+
+[data-theme="light"] .auth-bg-overlay {
+    display: none !important;
+}
+
+[data-theme="light"] .auth-brand {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+[data-theme="light"] .auth-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .auth-card-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .auth-card-subtitle {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .auth-input-label {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .auth-input-group .form-control {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .auth-input-group .form-control:focus {
+    background: #ffffff !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.15) !important;
+}
+
+[data-theme="light"] .auth-input-group .input-group-text {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
+}
+
+[data-theme="light"] .auth-submit-btn {
+    background: linear-gradient(135deg, #0284c7, #00b4d8) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35) !important;
+}
+
+[data-theme="light"] .auth-remember-label {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .auth-footer-text {
+    color: #64748b !important;
+}
+
+

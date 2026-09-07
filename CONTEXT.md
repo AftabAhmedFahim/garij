@@ -73,6 +73,24 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-09-08] - Light Mode & Dark Mode System with Image-Free Minimalist Light Aesthetic (Rakibul Islam Emon)
+- **Light & Dark Theme Engine**:
+  - Implemented client-side instant theme switching engine with `theme-toggle.js`, persisting preference in `localStorage.getItem("garij_theme")` (`dark` or `light`).
+  - Added synchronous theme initializer in `<head>` of [_LandingLayout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_LandingLayout.cshtml), [_Layout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_Layout.cshtml), and [_AuthLayout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_AuthLayout.cshtml) ensuring zero flash of unstyled content (FOUC).
+  - Added interactive theme toggle buttons in the desktop sticky navbar, mobile offcanvas drawer, internal app layout, and auth pages.
+- **Dark Mode Preservation**:
+  - Maintained 100% of the existing dark cinematic automotive theme with glowing cyan/neon accents, hero factory artwork, dark cards, and tachometer animation.
+- **Image-Free Minimalist Light Mode**:
+  - Per specifications, all heavy content images, car graphics, and photographic backgrounds are completely hidden in light mode (`display: none !important;`).
+  - Pure porcelain and white minimal surface palette (`#f8fafc`, `#ffffff`, `#f1f5f9`) with clean slate typography (`#0f172a`, `#1e293b`, `#475569`).
+  - Accented with bright, vibrant theme colors: electric cyan (`#0284c7`, `#00b4d8`) and automotive blue (`#0369a1`).
+  - Renovation section features an elegant 4-metric minimal stat grid ("25+ Years Reputation", "99.8% Diagnostic Accuracy", "10k+ Repairs Completed", "100% Genuine Parts").
+  - Testimonials section features a clean minimal vector pill badge (`Verified Client Endorsements`).
+  - Complete light mode styling across internal dashboard, tables, forms, modals, navigation dropdowns, and auth screens.
+- **Testing & Verification**:
+  - Added integration test `Pages_RenderThemeToggleAndInitializer_ForLightAndDarkMode` in [ProjectPurchaseIntegrationTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.IntegrationTests/ProjectPurchaseIntegrationTests.cs).
+  - 100% pass rate across the full solution (77/77 tests passing).
+
 ### [2026-09-08] - Custom Garage Naming & Top Navigation Branding (Rakibul Islam Emon)
 - **Admin Garage Naming & Branding**:
   - Implemented the ability for the admin/workshop owner who purchased the project to give their garage a custom name or rename it anytime.
