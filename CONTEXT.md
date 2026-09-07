@@ -87,7 +87,10 @@
   - Added integration tests to [ProjectPurchaseIntegrationTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.IntegrationTests/ProjectPurchaseIntegrationTests.cs):
     1. `Admin_CanCreateStaffAccount_WithEmailPasswordAndRole_AndStaffCanLogin`: Verifies admin creates a mechanic staff account with email & password, and that mechanic can log in and view the mechanic job board.
     2. `PurchaseCheckout_WithMechanicRole_AssignsMechanicRoleAndGrantsAccess`: Verifies a buyer selecting the `Mechanic` role during checkout receives that role and can immediately log in and access the Job Board.
-  - Full test suite passing at 100% (72/72 tests passing).
+    3. `LicensedUser_DoesNotSeePricingInNavbar_OnLandingPage`: Verifies that once a user purchases the project or is licensed, the `PRICING` navigation menu and `BUY PROJECT` call-to-action button are completely hidden from the desktop and mobile navigation bars.
+  - Full test suite passing at 100% (73/73 tests passing).
+- **Navbar Dynamic Visibility Polish**:
+  - Updated [_LandingLayout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_LandingLayout.cshtml) and [_Layout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_Layout.cshtml) to conditionally hide the `PRICING` menu link and `BUY PROJECT` button when a user has bought the project (or is an Admin), showing a neat `LICENSED` badge instead.
 
 ### [2026-09-07] - One-Time Payment & Lifetime Project License System (Rakibul Islam Emon)
 - **One-Time Buyout & License Model**: Implemented a complete software license purchase and activation system allowing garage owners to buy the project once ($499.00 USD, zero recurring subscriptions) to unlock full access to use the platform.

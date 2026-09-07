@@ -5,12 +5,13 @@
 @inject IProjectPurchaseService PurchaseService
 @{
     var isUserSignedIn = SignInManager.IsSignedIn(User);
+    var isAdmin = isUserSignedIn && User.IsInRole("Admin");
     var hasActiveLicense = false;
     if (isUserSignedIn)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var email = User.FindFirstValue(ClaimTypes.Email);
-        hasActiveLicense = await PurchaseService.HasActiveLicenseAsync(userId, email);
+        hasActiveLicense = isAdmin || (await PurchaseService.HasActiveLicenseAsync(userId, email));
     }
 }
 <!DOCTYPE html>
@@ -73,19 +74,32 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Testimonials">TESTIMONIALS</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Pricing">PRICING</a>
-                    </li>
+                    @if (!hasActiveLicense)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Pricing">PRICING</a>
+                        </li>
+                    }
                 </ul>
             </div>
 
             <!-- Right Actions: Buy Project + Status Pill + Auth Buttons + Offcanvas Menu Toggle -->
             <div class="d-flex align-items-center gap-2 gap-sm-3">
-                <!-- Buy Project Lifetime Button -->
-                <a asp-controller="Purchase" asp-action="Index" class="btn-nav-glow-buy" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #050b14; font-weight: 700; border-radius: 50px; padding: 7px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); font-size: 0.85rem;">
-                    <i class="bi bi-cart-check-fill"></i>
-                    <span>BUY PROJECT</span>
-                </a>
+                @if (!hasActiveLicense)
+                {
+                    <!-- Buy Project Lifetime Button -->
+                    <a asp-controller="Purchase" asp-action="Index" class="btn-nav-glow-buy" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #050b14; font-weight: 700; border-radius: 50px; padding: 7px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); font-size: 0.85rem;">
+                        <i class="bi bi-cart-check-fill"></i>
+                        <span>BUY PROJECT</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Purchase" asp-action="Status" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 font-monospace d-none d-md-inline-flex align-items-center gap-1" title="View Lifetime License Certificate">
+                        <i class="bi bi-shield-check text-info"></i>
+                        <span class="small fw-bold">LICENSED</span>
+                    </a>
+                }
 
                 <!-- Status Lookup Quick Button -->
                 <a href="/#status-tracker" class="btn-nav-status-pill d-none d-lg-inline-flex" title="Track your vehicle service progress">
@@ -95,11 +109,10 @@
 
                 @if (isUserSignedIn)
                 {
-                    var isAdmin = User.IsInRole("Admin");
                     var isMechanic = User.IsInRole("Mechanic");
                     var isFrontDesk = User.IsInRole("FrontDesk");
 
-                    if (hasActiveLicense || isAdmin)
+                    if (hasActiveLicense)
                     {
                         if (isAdmin || isFrontDesk)
                         {
@@ -197,18 +210,30 @@
                             <span>TESTIMONIALS</span>
                         </a>
                     </li>
-                    <li>
-                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Pricing" data-bs-dismiss="offcanvas">
-                            <span class="link-num">05</span>
-                            <span>PRICING &amp; LICENSE</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="offcanvas-nav-link text-info" asp-controller="Purchase" asp-action="Index" data-bs-dismiss="offcanvas">
-                            <span class="link-num">06</span>
-                            <span>BUY PROJECT</span>
-                        </a>
-                    </li>
+                    @if (!hasActiveLicense)
+                    {
+                        <li>
+                            <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Pricing" data-bs-dismiss="offcanvas">
+                                <span class="link-num">05</span>
+                                <span>PRICING &amp; LICENSE</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="offcanvas-nav-link text-info" asp-controller="Purchase" asp-action="Index" data-bs-dismiss="offcanvas">
+                                <span class="link-num">06</span>
+                                <span>BUY PROJECT</span>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <a class="offcanvas-nav-link text-info" asp-controller="Purchase" asp-action="Status" data-bs-dismiss="offcanvas">
+                                <span class="link-num">05</span>
+                                <span>LICENSE CERTIFICATE</span>
+                            </a>
+                        </li>
+                    }
                 </ul>
 
                 <!-- Action CTA: Make Appointment -->
@@ -275,7 +300,14 @@
                         <li><a asp-controller="Home" asp-action="About">About Workshop</a></li>
                         <li><a asp-controller="Home" asp-action="Services">Our Services</a></li>
                         <li><a asp-controller="Home" asp-action="Testimonials">Testimonials</a></li>
-                        <li><a asp-controller="Home" asp-action="Pricing">Pricing &amp; License</a></li>
+                        @if (!hasActiveLicense)
+                        {
+                            <li><a asp-controller="Home" asp-action="Pricing">Pricing &amp; License</a></li>
+                        }
+                        else
+                        {
+                            <li><a asp-controller="Purchase" asp-action="Status">License Certificate</a></li>
+                        }
                         <li><a href="/#status-tracker">Track Service Status</a></li>
                     </ul>
                 </div>

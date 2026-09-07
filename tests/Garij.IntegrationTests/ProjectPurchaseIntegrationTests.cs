@@ -294,5 +294,39 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         var jobBoardResponse = await client.GetAsync("/Mechanic/JobBoard");
         Assert.Equal(HttpStatusCode.OK, jobBoardResponse.StatusCode);
     }
-}
 
+    [Fact]
+    public async Task LicensedUser_DoesNotSeePricingInNavbar_OnLandingPage()
+    {
+        var client = CreateNonRedirectingClient();
+
+        // 1. Unlicensed anonymous user visits landing page: Pricing is visible in navbar
+        var anonHome = await client.GetAsync("/");
+        var anonHtml = await anonHome.Content.ReadAsStringAsync();
+        Assert.Contains("PRICING", anonHtml);
+        Assert.Contains("BUY PROJECT", anonHtml);
+
+        // 2. Log in as seeded Admin (who has an active license)
+        var loginPage = await client.GetAsync("/Account/Login");
+        var loginToken = await ExtractAntiForgeryTokenAsync(loginPage);
+
+        var loginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = "admin@garij.com",
+            ["Password"] = "Admin@12345",
+            ["__RequestVerificationToken"] = loginToken,
+        });
+
+        var loginResponse = await client.PostAsync("/Account/Login", loginForm);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+
+        // 3. Now visit landing page as licensed user
+        var authHome = await client.GetAsync("/");
+        var authHtml = await authHome.Content.ReadAsStringAsync();
+
+        // Pricing and Buy Project button must NOT be present in navbar
+        Assert.DoesNotContain(">PRICING<", authHtml);
+        Assert.DoesNotContain("BUY PROJECT", authHtml);
+        Assert.Contains("LICENSED", authHtml);
+    }
+}
