@@ -19,106 +19,160 @@
     
     <!-- Landing Custom Stylesheet -->
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <!-- Lottie Web Animation Engine -->
+    <script src="~/lib/lottie/lottie.min.js" asp-append-version="true"></script>
 </head>
 <body class="landing-page-body">
 
-    <!-- 1. Tachometer Preloader Loading Animation -->
+    <!-- 1. Lottie Preloader Loading Animation -->
     <div id="page-preloader">
-        <div class="preloader-tachometer">
-            <div class="tachometer-dial"></div>
-            <div class="tachometer-inner-circle"></div>
-            <div class="tachometer-needle"></div>
-            <div class="tachometer-center"></div>
+        <div class="preloader-lottie-container">
+            <div id="lottie-preloader" class="preloader-lottie-player"></div>
         </div>
-        <div class="preloader-brand">GARIJ</div>
-        <div class="preloader-text">INITIALIZING SYSTEMS... READY</div>
     </div>
 
-    <!-- 2. Sticky Main Navigation Bar with Rounded Glowing Hover Effects -->
-    <nav class="navbar navbar-expand-lg main-navbar-sticky py-3">
-        <div class="container-fluid px-lg-5">
-            <!-- Brand Logo -->
-            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                <i class="bi bi-gear-wide-connected text-info"></i>
-                <span>GARIJ</span>
-                <span class="brand-glow-dot"></span>
+    <!-- 2. Sticky Main Navigation Bar (Mockup Minimalist Header) -->
+    <nav class="navbar navbar-expand main-navbar-sticky py-3">
+        <div class="container-fluid px-lg-5 d-flex justify-content-between align-items-center">
+            <!-- Brand Logo with Sleek Automotive Contour Emblem -->
+            <a class="navbar-brand text-decoration-none py-0" asp-controller="Home" asp-action="Index">
+                <div class="brand-emblem-wrap">
+                    <svg class="brand-car-emblem" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 5 20 C 15 20, 24 18, 32 14 C 40 10, 47 4, 62 4 C 76 4, 83 9, 89 15 C 93 18, 96 20, 98 20" stroke="#00d2ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M 35 13 C 42 8, 50 6, 61 6 C 71 6, 78 9, 83 14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.75"/>
+                    </svg>
+                    <div class="brand-title-text font-ethnocentric">GARIJ</div>
+                </div>
             </a>
 
-            <!-- Mobile Toggler -->
-            <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbar" aria-controls="landingNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="bi bi-list text-light fs-2"></i>
-            </button>
+            <!-- Right Actions: Status Pill + Auth Buttons + Menu Button -->
+            <div class="d-flex align-items-center gap-2 gap-sm-3">
+                <!-- Status Lookup Quick Button -->
+                <a href="#status-tracker" class="btn-nav-status-pill d-none d-lg-inline-flex" title="Track your vehicle service progress">
+                    <i class="bi bi-radar text-info"></i>
+                    <span>Status Lookup</span>
+                </a>
 
-            <!-- Navigation Links & Rounded Action Buttons -->
-            <div class="collapse navbar-collapse" id="landingNavbar">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#hero">HOME</a>
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    var isAdmin = User.IsInRole("Admin");
+                    var isMechanic = User.IsInRole("Mechanic");
+                    var isFrontDesk = User.IsInRole("FrontDesk");
+
+                    @if (isAdmin || isFrontDesk)
+                    {
+                        <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login d-inline-flex">
+                            <i class="bi bi-speedometer2 me-1"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    }
+                    else if (isMechanic)
+                    {
+                        <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login d-inline-flex">
+                            <i class="bi bi-wrench me-1"></i>
+                            <span>Job Board</span>
+                        </a>
+                    }
+                    <a asp-controller="Account" asp-action="Logout" class="btn-nav-glow-register d-none d-sm-inline-flex">
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                        <span>Sign Out</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="btn-nav-glow-login d-inline-flex">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                        <span>Login</span>
+                    </a>
+                    <a asp-controller="Account" asp-action="Register" class="btn-nav-glow-register d-none d-sm-inline-flex">
+                        <i class="bi bi-person-plus me-1"></i>
+                        <span>Sign Up</span>
+                    </a>
+                }
+
+                <!-- Template Menu Button -->
+                <button class="btn-template-menu" type="button" data-bs-toggle="offcanvas" data-bs-target="#landingOffcanvas" aria-controls="landingOffcanvas" aria-label="Toggle navigation menu">
+                    <span>Menu</span>
+                    <span class="menu-bars-icon">
+                        <span class="bar-line"></span>
+                        <span class="bar-line"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2b. Luxury Glassmorphic Offcanvas Navigation Drawer -->
+    <div class="offcanvas offcanvas-end garij-offcanvas" tabindex="-1" id="landingOffcanvas" aria-labelledby="landingOffcanvasLabel">
+        <div class="offcanvas-header">
+            <div class="d-flex align-items-center gap-2 flex-grow-1" id="landingOffcanvasLabel">
+                <div class="brand-emblem-wrap align-items-start">
+                    <svg class="brand-car-emblem" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 5 20 C 15 20, 24 18, 32 14 C 40 10, 47 4, 62 4 C 76 4, 83 9, 89 15 C 93 18, 96 20, 98 20" stroke="#00d2ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M 35 13 C 42 8, 50 6, 61 6 C 71 6, 78 9, 83 14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.75"/>
+                    </svg>
+                    <div class="brand-title-text font-ethnocentric">GARIJ</div>
+                </div>
+            </div>
+            <button type="button" class="btn-close-offcanvas ms-auto" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="offcanvas-body">
+            <div>
+                <!-- Primary Navigation Links -->
+                <ul class="offcanvas-nav-list">
+                    <li>
+                        <a class="offcanvas-nav-link active" href="#hero" data-bs-dismiss="offcanvas">
+                            <span class="link-num">01</span>
+                            <span>HOME</span>
+                        </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">ABOUT</a>
+                    <li>
+                        <a class="offcanvas-nav-link" href="#about" data-bs-dismiss="offcanvas">
+                            <span class="link-num">02</span>
+                            <span>ABOUT WORKSHOP</span>
+                        </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#services">SERVICES</a>
+                    <li>
+                        <a class="offcanvas-nav-link" href="#services" data-bs-dismiss="offcanvas">
+                            <span class="link-num">03</span>
+                            <span>SERVICES</span>
+                        </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#testimonials">TESTIMONIALS</a>
+                    <li>
+                        <a class="offcanvas-nav-link" href="#testimonials" data-bs-dismiss="offcanvas">
+                            <span class="link-num">04</span>
+                            <span>TESTIMONIALS</span>
+                        </a>
                     </li>
+
                 </ul>
 
-                <!-- Dedicated Rounded Glowing Action Buttons: Status Lookup, Register, Login -->
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                    <!-- Status Lookup Button (Smoothly brings down to Landing Page Status Lookup section) -->
-                    <a href="#status-tracker" class="btn-nav-glow-lookup" title="Track your vehicle service progress">
-                        <i class="bi bi-search"></i>
-                        <span>Status Lookup</span>
-                    </a>
-
-                    @if (SignInManager.IsSignedIn(User))
-                    {
-                        var isAdmin = User.IsInRole("Admin");
-                        var isMechanic = User.IsInRole("Mechanic");
-                        var isFrontDesk = User.IsInRole("FrontDesk");
-
-                        if (isAdmin || isFrontDesk)
-                        {
-                            <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login">
-                                <i class="bi bi-speedometer2"></i> Dashboard
-                            </a>
-                        }
-                        else if (isMechanic)
-                        {
-                            <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login">
-                                <i class="bi bi-wrench"></i> Job Board
-                            </a>
-                        }
-                        <a asp-controller="Account" asp-action="Logout" class="btn-nav-glow-register">
-                            <i class="bi bi-box-arrow-right"></i> Logout
-                        </a>
-                    }
-                    else
-                    {
-                        <!-- Register Button with Rounded Glowing Border -->
-                        <a asp-controller="Account" asp-action="Register" class="btn-nav-glow-register">
-                            <i class="bi bi-person-plus"></i>
-                            <span>Register</span>
-                        </a>
-
-                        <!-- Login Button with Rounded Glowing Cyan Aura -->
-                        <a asp-controller="Account" asp-action="Login" class="btn-nav-glow-login">
-                            <i class="bi bi-box-arrow-in-right"></i>
-                            <span>Login</span>
-                        </a>
-                    }
-
-                    <!-- Make Appointment CTA -->
-                    <a href="#status-tracker" class="btn-nav-appointment">
+                <!-- Action CTA: Make Appointment -->
+                <div class="mb-2">
+                    <a href="#status-tracker" class="btn-nav-appointment w-100 py-3 text-center d-block rounded-3" data-bs-dismiss="offcanvas">
+                        <i class="bi bi-calendar-check me-2"></i>
                         <span>MAKE APPOINTMENT</span>
                     </a>
                 </div>
             </div>
+
+            <!-- Workshop Contact & Operating Hours Info in Drawer -->
+            <div class="offcanvas-contact-box mt-4 pt-3 border-top border-secondary border-opacity-25">
+                <div class="d-flex align-items-center gap-2 text-info small mb-1">
+                    <i class="bi bi-telephone-fill"></i>
+                    <a href="tel:+8801711234567" class="text-info text-decoration-none fw-bold">+880 1711-234567</a>
+                </div>
+                <div class="text-secondary small mb-1">
+                    <i class="bi bi-geo-alt me-1 text-info"></i> 141 & 142, Love Road, Tejgaon Industrial Area, Dhaka-1208
+                </div>
+                <div class="text-muted small">
+                    <i class="bi bi-clock me-1 text-info"></i> Sat - Thu: 08:00 AM - 08:00 PM
+                </div>
+            </div>
         </div>
-    </nav>
+    </div>
 
     <!-- Main Content Area -->
     <main role="main">
@@ -131,9 +185,15 @@
             <div class="row g-4">
                 <!-- Col 1: Brand & Bio -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="footer-brand-title">
-                        <i class="bi bi-gear-wide-connected text-info me-2"></i>GARIJ
-                    </div>
+                    <a class="text-decoration-none d-inline-block mb-3" asp-controller="Home" asp-action="Index">
+                        <div class="brand-emblem-wrap align-items-start">
+                            <svg class="brand-car-emblem" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M 5 20 C 15 20, 24 18, 32 14 C 40 10, 47 4, 62 4 C 76 4, 83 9, 89 15 C 93 18, 96 20, 98 20" stroke="#00d2ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M 35 13 C 42 8, 50 6, 61 6 C 71 6, 78 9, 83 14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.75"/>
+                            </svg>
+                            <div class="brand-title-text font-ethnocentric">GARIJ</div>
+                        </div>
+                    </a>
                     <p class="small text-secondary mb-3">
                         Garij is an intelligent, full-spectrum vehicle service center management platform providing precision diagnostic tuning, multi-point restoration, and real-time transparent tracking.
                     </p>
@@ -172,13 +232,13 @@
                 <!-- Col 4: Contact & Working Hours -->
                 <div class="col-lg-3 col-md-6">
                     <h5 class="footer-heading">HOURS & LOCATION</h5>
-                    <p class="small mb-1 text-light"><i class="bi bi-geo-alt text-info me-2"></i>9332 Bernier Dam, Miami, USA</p>
-                    <p class="small mb-1 text-light"><i class="bi bi-telephone text-info me-2"></i>0-800-123-4567</p>
-                    <p class="small mb-3 text-light"><i class="bi bi-envelope text-info me-2"></i>Carrepair@example.com</p>
+                    <p class="small mb-1 text-light"><i class="bi bi-geo-alt text-info me-2"></i>141 & 142, Love Road, Tejgaon Industrial Area, Dhaka-1208</p>
+                    <p class="small mb-1 text-light"><i class="bi bi-telephone text-info me-2"></i><a href="tel:+8801711234567" class="text-light text-decoration-none">+880 1711-234567</a></p>
+                    <p class="small mb-3 text-light"><i class="bi bi-envelope text-info me-2"></i><a href="mailto:garij@gmail.com" class="text-light text-decoration-none">garij@gmail.com</a></p>
                     <div class="p-2 rounded-3 bg-dark border border-secondary border-opacity-25 small">
                         <span class="text-info fw-bold d-block">WORKSHOP HOURS:</span>
-                        <span>Mon - Sat: 08:00 AM - 08:00 PM</span><br/>
-                        <span class="text-muted">Sunday: Emergency On-Call</span>
+                        <span>Sat - Thu: 08:00 AM - 08:00 PM</span><br/>
+                        <span class="text-muted">Friday: Emergency On-Call</span>
                     </div>
                 </div>
             </div>
