@@ -452,12 +452,12 @@ body.auth-page-body {
    Zero images, clean minimal white card, bright energetic theme accents
    ========================================================================== */
 [data-theme="light"] body.auth-page-body {
-    background-color: #f8fafc !important;
+    background-color: #edf2f7 !important;
     color: #0f172a !important;
 }
 
 [data-theme="light"] .auth-shell {
-    background: radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.08) 0%, rgba(248, 250, 252, 1) 60%) !important;
+    background: radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.12) 0%, #edf2f7 70%) !important;
 }
 
 [data-theme="light"] .auth-bg-backdrop {
@@ -476,8 +476,8 @@ body.auth-page-body {
 
 [data-theme="light"] .auth-card {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.1) !important;
 }
 
 [data-theme="light"] .auth-card-title {
@@ -485,16 +485,22 @@ body.auth-page-body {
 }
 
 [data-theme="light"] .auth-card-subtitle {
-    color: #64748b !important;
+    color: #475569 !important;
 }
 
 [data-theme="light"] .auth-input-label {
     color: #334155 !important;
 }
 
-[data-theme="light"] .auth-input-group .form-control {
-    background: #f8fafc !important;
+[data-theme="light"] .auth-note {
+    background: #f1f5f9 !important;
     border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] .auth-input-group .form-control {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     color: #0f172a !important;
 }
 

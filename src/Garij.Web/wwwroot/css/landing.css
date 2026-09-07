@@ -1923,11 +1923,11 @@ body.landing-page-body {
 :root[data-theme="light"],
 [data-theme="light"] {
     color-scheme: light;
-    --bg-dark-hero: #f8fafc;
-    --bg-dark-section: #f1f5f9;
+    --bg-dark-hero: #edf2f7;
+    --bg-dark-section: #e2e8f0;
     --bg-dark-card: #ffffff;
-    --bg-dark-card-hover: #f8fafc;
-    --bg-navbar: rgba(255, 255, 255, 0.94);
+    --bg-dark-card-hover: #ffffff;
+    --bg-navbar: rgba(255, 255, 255, 0.96);
 
     --neon-blue: #0284c7;
     --neon-cyan: #00b4d8;
@@ -1939,10 +1939,10 @@ body.landing-page-body {
 
     --text-pure: #0f172a;
     --text-light: #1e293b;
-    --text-muted: #64748b;
-    --text-dark-muted: #94a3b8;
+    --text-muted: #475569;
+    --text-dark-muted: #64748b;
 
-    --border-dark: #e2e8f0;
+    --border-dark: #cbd5e1;
     --border-glow: #0284c7;
 }
 
@@ -1959,7 +1959,7 @@ body.landing-page-body {
 
 /* 2. Body & Global Colors in Light Mode */
 [data-theme="light"] body.landing-page-body {
-    background-color: #f8fafc !important;
+    background-color: #edf2f7 !important;
     color: #1e293b !important;
 }
 
@@ -1979,9 +1979,9 @@ body.landing-page-body {
 
 /* 3. Sticky Navbar in Light Mode */
 [data-theme="light"] .main-navbar-sticky {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06) !important;
     backdrop-filter: blur(16px) !important;
 }
 
@@ -2195,10 +2195,10 @@ body.landing-page-body {
 
 .renovation-metric-tile {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     border-radius: 12px;
     padding: 1.25rem;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
     transition: transform 0.25s ease, border-color 0.25s ease;
 }
 
@@ -2226,13 +2226,13 @@ body.landing-page-body {
 
 /* 6. Live Telemetry / Status Tracker in Light Mode */
 [data-theme="light"] .quick-lookup-banner {
-    background-color: #f1f5f9 !important;
+    background-color: #edf2f7 !important;
 }
 
 [data-theme="light"] .quick-lookup-card {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 10px 32px rgba(15, 23, 42, 0.09) !important;
 }
 
 [data-theme="light"] .quick-lookup-card h3 {
@@ -2240,12 +2240,12 @@ body.landing-page-body {
 }
 
 [data-theme="light"] .quick-lookup-card p {
-    color: #64748b !important;
+    color: #475569 !important;
 }
 
 [data-theme="light"] .quick-lookup-input {
-    background: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
     color: #0f172a !important;
 }
 
@@ -2329,8 +2329,8 @@ body.landing-page-body {
 
 /* 7. Testimonials, Services & Pricing in Light Mode */
 [data-theme="light"] .testimonials-section {
-    background-color: #f8fafc !important;
-    border-top: 1px solid #e2e8f0 !important;
+    background-color: #edf2f7 !important;
+    border-top: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] .testimonials-title {
@@ -2339,8 +2339,8 @@ body.landing-page-body {
 
 [data-theme="light"] .testimonial-card {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.07) !important;
 }
 
 [data-theme="light"] .testimonial-quote-icon {
@@ -2361,10 +2361,10 @@ body.landing-page-body {
 
 [data-theme="light"] #services,
 [data-theme="light"] .services-home-section {
-    background-color: #ffffff !important;
+    background-color: #edf2f7 !important;
     background-image: none !important;
-    border-top: 1px solid #e2e8f0 !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: 1px solid #cbd5e1 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] #services h2,
@@ -2374,14 +2374,14 @@ body.landing-page-body {
 
 [data-theme="light"] #services p,
 [data-theme="light"] .services-home-section p {
-    color: #64748b !important;
+    color: #475569 !important;
 }
 
 [data-theme="light"] #services .rounded-3,
 [data-theme="light"] .services-home-section .rounded-3 {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.07) !important;
 }
 
 [data-theme="light"] #services .rounded-3 h4,
@@ -2396,10 +2396,10 @@ body.landing-page-body {
 
 [data-theme="light"] #pricing,
 [data-theme="light"] .pricing-home-section {
-    background-color: #f8fafc !important;
+    background-color: #e4ecf4 !important;
     background-image: none !important;
-    border-top: 1px solid #e2e8f0 !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: 1px solid #cbd5e1 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] #pricing h2,
@@ -2414,8 +2414,8 @@ body.landing-page-body {
 [data-theme="light"] .subpage-callout-card {
     background: #ffffff !important;
     background-image: none !important;
-    border: 1.5px solid rgba(2, 132, 199, 0.35) !important;
-    box-shadow: 0 15px 40px rgba(2, 132, 199, 0.08) !important;
+    border: 2px solid rgba(2, 132, 199, 0.45) !important;
+    box-shadow: 0 16px 42px rgba(15, 23, 42, 0.12) !important;
 }
 
 [data-theme="light"] #pricing h3,
@@ -2441,7 +2441,7 @@ body.landing-page-body {
 [data-theme="light"] .pricing-home-section .bg-dark,
 [data-theme="light"] .pricing-main-card .bg-dark {
     background: #f1f5f9 !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] #pricing .display-5,
@@ -2452,21 +2452,21 @@ body.landing-page-body {
 
 /* Subpage Containers in Light Mode */
 [data-theme="light"] .landing-subpage-container {
-    background: #f8fafc !important;
+    background: #edf2f7 !important;
     background-image: none !important;
 }
 
 [data-theme="light"] #landingNavbarNav {
     background: rgba(255, 255, 255, 0.98);
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.09);
 }
 
 /* 8. Automotive Footer & Preloader in Light Mode */
 [data-theme="light"] .automotive-footer {
-    background-color: #f1f5f9 !important;
-    border-top: 1px solid #e2e8f0 !important;
-    color: #64748b !important;
+    background-color: #e2e8f0 !important;
+    border-top: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
 }
 
 [data-theme="light"] .automotive-footer strong,
