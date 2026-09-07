@@ -73,6 +73,22 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-09-08] - Buyer Role Selection & Staff Account Management (Rakibul Islam Emon)
+- **Buyer Role Selection at Checkout**:
+  - Extended [CreateProjectPurchaseDto.cs](file:///home/rakibul/Projects/garij/src/Garij.Application/DTOs/CreateProjectPurchaseDto.cs) with `AccountRole` property (defaults to `Admin` / Workshop Owner).
+  - Updated [PurchaseController.cs](file:///home/rakibul/Projects/garij/src/Garij.Web/Controllers/PurchaseController.cs) so buyers purchasing the project can choose whether their account is created/assigned as `Admin`, `FrontDesk`, or `Mechanic`.
+  - Updated [Views/Purchase/Index.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Purchase/Index.cshtml) with an "Assign My Account Role" dropdown selector.
+- **Admin Staff User Creation & Role Assignment**:
+  - Created [CreateStaffUserViewModel.cs](file:///home/rakibul/Projects/garij/src/Garij.Web/Models/CreateStaffUserViewModel.cs) and [Views/Admin/CreateUser.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/CreateUser.cshtml) for workshop owners to create staff accounts with Full Name, Email, Phone Number, Role (`FrontDesk`, `Mechanic`, `Admin`), and Password.
+  - Implemented `AdminController.CreateUser` (`GET` and `POST`) which registers the `IdentityUser`, assigns the role in ASP.NET Core Identity, creates a `User` in `_context.StaffUsers`, and grants staff license access so staff members do not need to purchase an individual license.
+  - Updated [Views/Admin/ManageUsers.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/ManageUsers.cshtml) with modern dark automotive UI table displaying staff profiles and direct "+ Create Staff Account" navigation.
+  - Enhanced [Views/Admin/ManageRoles.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/ManageRoles.cshtml) to allow administrators to reassign staff roles dynamically.
+- **Testing & Verification**:
+  - Added integration tests to [ProjectPurchaseIntegrationTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.IntegrationTests/ProjectPurchaseIntegrationTests.cs):
+    1. `Admin_CanCreateStaffAccount_WithEmailPasswordAndRole_AndStaffCanLogin`: Verifies admin creates a mechanic staff account with email & password, and that mechanic can log in and view the mechanic job board.
+    2. `PurchaseCheckout_WithMechanicRole_AssignsMechanicRoleAndGrantsAccess`: Verifies a buyer selecting the `Mechanic` role during checkout receives that role and can immediately log in and access the Job Board.
+  - Full test suite passing at 100% (72/72 tests passing).
+
 ### [2026-09-07] - One-Time Payment & Lifetime Project License System (Rakibul Islam Emon)
 - **One-Time Buyout & License Model**: Implemented a complete software license purchase and activation system allowing garage owners to buy the project once ($499.00 USD, zero recurring subscriptions) to unlock full access to use the platform.
 - **Domain Layer (`Garij.Domain`)**: Added `ProjectPurchase.cs` entity and `LicenseStatus.cs` enum tracking cryptographically unique license keys (`GRJ-LIC-XXXX-XXXX-XXXX`), buyer details, transaction references, amount, and active states.

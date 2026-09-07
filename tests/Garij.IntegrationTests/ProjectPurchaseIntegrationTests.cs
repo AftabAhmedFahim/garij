@@ -187,4 +187,112 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         Assert.Equal(HttpStatusCode.Redirect, dashboardResponse.StatusCode);
         Assert.Contains("/Purchase", dashboardResponse.Headers.Location!.ToString());
     }
+
+    [Fact]
+    public async Task Admin_CanCreateStaffAccount_WithEmailPasswordAndRole_AndStaffCanLogin()
+    {
+        var adminClient = CreateNonRedirectingClient();
+
+        // 1. Log in as admin (seeded project owner)
+        var loginPage = await adminClient.GetAsync("/Account/Login");
+        var loginToken = await ExtractAntiForgeryTokenAsync(loginPage);
+
+        var loginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = "admin@garij.com",
+            ["Password"] = "Admin@12345",
+            ["__RequestVerificationToken"] = loginToken,
+        });
+
+        var loginResponse = await adminClient.PostAsync("/Account/Login", loginForm);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+
+        // 2. Access Admin Create User page
+        var createPage = await adminClient.GetAsync("/Admin/CreateUser");
+        Assert.Equal(HttpStatusCode.OK, createPage.StatusCode);
+        var createToken = await ExtractAntiForgeryTokenAsync(createPage);
+
+        // 3. Create a new Mechanic account
+        var mechanicEmail = $"mechanic_{Guid.NewGuid():N}@test.com";
+        var createForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["FullName"] = "Master Mechanic Test",
+            ["Email"] = mechanicEmail,
+            ["PhoneNumber"] = "+880 1711-999888",
+            ["Role"] = "Mechanic",
+            ["Password"] = "Mechanic@12345",
+            ["ConfirmPassword"] = "Mechanic@12345",
+            ["__RequestVerificationToken"] = createToken,
+        });
+
+        var createResponse = await adminClient.PostAsync("/Admin/CreateUser", createForm);
+        Assert.Equal(HttpStatusCode.Redirect, createResponse.StatusCode);
+        Assert.Contains("/Admin/ManageUsers", createResponse.Headers.Location!.ToString());
+
+        // 4. Verify the new mechanic can log in with email and password
+        var mechanicClient = CreateNonRedirectingClient();
+        var mechLoginPage = await mechanicClient.GetAsync("/Account/Login");
+        var mechLoginToken = await ExtractAntiForgeryTokenAsync(mechLoginPage);
+
+        var mechLoginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = mechanicEmail,
+            ["Password"] = "Mechanic@12345",
+            ["__RequestVerificationToken"] = mechLoginToken,
+        });
+
+        var mechLoginResponse = await mechanicClient.PostAsync("/Account/Login", mechLoginForm);
+        Assert.Equal(HttpStatusCode.Redirect, mechLoginResponse.StatusCode);
+
+        // 5. Verify the mechanic can access the Job Board
+        var jobBoardResponse = await mechanicClient.GetAsync("/Mechanic/JobBoard");
+        Assert.Equal(HttpStatusCode.OK, jobBoardResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task PurchaseCheckout_WithMechanicRole_AssignsMechanicRoleAndGrantsAccess()
+    {
+        var client = CreateNonRedirectingClient();
+        var uniqueEmail = $"buyer_mechanic_{Guid.NewGuid():N}@test.com";
+
+        // 1. Visit Purchase page
+        var purchasePage = await client.GetAsync("/Purchase");
+        var purchaseToken = await ExtractAntiForgeryTokenAsync(purchasePage);
+
+        // 2. Checkout with Mechanic role and password
+        var checkoutForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["BuyerName"] = "Mechanic Owner",
+            ["BuyerEmail"] = uniqueEmail,
+            ["WorkshopName"] = "Mechanic Pitstop",
+            ["PaymentMethod"] = "CreditCard",
+            ["Password"] = "Mechanic@12345",
+            ["AccountRole"] = "Mechanic",
+            ["IsTestPayment"] = "true",
+            ["__RequestVerificationToken"] = purchaseToken,
+        });
+
+        var checkoutResponse = await client.PostAsync("/Purchase/Checkout", checkoutForm);
+        Assert.Equal(HttpStatusCode.Redirect, checkoutResponse.StatusCode);
+        Assert.Contains("/Purchase/Success", checkoutResponse.Headers.Location!.ToString());
+
+        // 3. Log in with the created mechanic account
+        var loginPage = await client.GetAsync("/Account/Login");
+        var loginToken = await ExtractAntiForgeryTokenAsync(loginPage);
+
+        var loginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = uniqueEmail,
+            ["Password"] = "Mechanic@12345",
+            ["__RequestVerificationToken"] = loginToken,
+        });
+
+        var loginResponse = await client.PostAsync("/Account/Login", loginForm);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+
+        // 4. Mechanic can access Mechanic Job Board
+        var jobBoardResponse = await client.GetAsync("/Mechanic/JobBoard");
+        Assert.Equal(HttpStatusCode.OK, jobBoardResponse.StatusCode);
+    }
 }
+

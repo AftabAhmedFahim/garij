@@ -167,6 +167,15 @@
                                             <small class="text-white-50 d-block mt-1">Allows immediate login after purchase.</small>
                                         </div>
                                     }
+                                    <div class="col-md-6">
+                                        <label asp-for="AccountRole" class="form-label text-light small fw-semibold">Assign My Account Role</label>
+                                        <select asp-for="AccountRole" class="form-select bg-dark text-light border-secondary">
+                                            <option value="Admin" selected>Admin / Workshop Owner (Full Access)</option>
+                                            <option value="FrontDesk">Front Desk (Reception &amp; Billing)</option>
+                                            <option value="Mechanic">Certified Mechanic (Job Board &amp; Repairs)</option>
+                                        </select>
+                                        <small class="text-white-50 d-block mt-1">Role assigned to your user account upon purchase.</small>
+                                    </div>
                                 </div>
 
                                 <!-- Section 2: Payment Method -->

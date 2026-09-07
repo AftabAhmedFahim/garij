@@ -34,4 +34,9 @@ public class CreateProjectPurchaseDto
     public bool IsTestPayment { get; set; } = false;
 
     public string? ExistingLicenseKey { get; set; }
+
+    /// <summary>
+    /// The initial role assigned to the buyer's account (Admin, FrontDesk, Mechanic). Defaults to Admin.
+    /// </summary>
+    public string AccountRole { get; set; } = "Admin";
 }
