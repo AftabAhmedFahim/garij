@@ -1,5 +1,7 @@
 @using Garij.Application.Interfaces
+@using System.Security.Claims
 @inject INotificationService NotificationService
+@inject IProjectPurchaseService PurchaseService
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,64 +40,108 @@
                         var isAdmin = User.IsInRole("Admin");
                         var isFrontDesk = User.IsInRole("FrontDesk");
                         var isMechanic = User.IsInRole("Mechanic");
-                        var pendingNotificationCount = (isAdmin || isFrontDesk)
+                        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var email = User.FindFirstValue(ClaimTypes.Email);
+                        var hasLicense = isAdmin || (await PurchaseService.HasActiveLicenseAsync(userId, email));
+                        var pendingNotificationCount = (isAdmin || isFrontDesk) && hasLicense
                             ? (await NotificationService.GetPendingNotificationsAsync()).Count()
                             : 0;
                     }
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-wrap">
-                        @if (isAdmin || isFrontDesk)
+                        <!-- Public Presentation Links (Always Accessible) -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="About">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Services">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Pricing">Pricing</a>
+                        </li>
+
+                        @if (hasLicense)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Clients</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Customer" asp-action="Index">Customers</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Vehicle" asp-action="Index">Vehicles</a></li>
-                                </ul>
-                            </li>
+                            @if (isAdmin || isFrontDesk)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Clients</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Customer" asp-action="Index">Customers</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Vehicle" asp-action="Index">Vehicles</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            @if (isAdmin || isFrontDesk || isMechanic)
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Jobs</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Mechanic" asp-action="JobBoard">Job Board</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Workshop</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Parts" asp-action="Index">Parts</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Mechanic" asp-action="Index">Mechanics</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            @if (isAdmin || isFrontDesk)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Billing" asp-action="Index">Billing</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Report" asp-action="Index">Reports</a>
+                                </li>
+                            }
+                            @if (isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
+                                </li>
+                            }
                         }
-                        @if (isAdmin || isFrontDesk || isMechanic)
+                        else
                         {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Jobs</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Mechanic" asp-action="JobBoard">Job Board</a></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Workshop</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Parts" asp-action="Index">Parts</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Mechanic" asp-action="Index">Mechanics</a></li>
-                                </ul>
-                            </li>
-                        }
-                        @if (isAdmin || isFrontDesk)
-                        {
+                            <!-- Unlicensed user: show locked badge -->
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Billing" asp-action="Index">Billing</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Report" asp-action="Index">Reports</a>
-                            </li>
-                        }
-                        @if (isAdmin)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
+                                <a class="nav-link text-warning fw-bold d-inline-flex align-items-center gap-1" asp-area="" asp-controller="Purchase" asp-action="Index">
+                                    <i class="bi bi-lock-fill"></i>
+                                    <span>Dashboard (Locked)</span>
+                                </a>
                             </li>
                         }
                     </ul>
 
                     <div class="d-flex align-items-center flex-wrap gap-2">
+                        @if (hasLicense)
+                        {
+                            <a asp-controller="Purchase" asp-action="Status" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 font-monospace d-inline-flex align-items-center gap-1" title="View Lifetime License Certificate">
+                                <i class="bi bi-shield-check text-info"></i>
+                                <span class="d-none d-md-inline small fw-bold">LIFETIME LICENSE</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Purchase" asp-action="Index" class="btn btn-sm btn-info rounded-pill px-3 py-1 fw-bold text-dark d-inline-flex align-items-center gap-1 shadow">
+                                <i class="bi bi-cart-check-fill"></i>
+                                <span>BUY PROJECT</span>
+                            </a>
+                        }
                         <a class="btn-nav-glow-lookup" href="/#status-tracker">
                             <i class="bi bi-search"></i>
                             <span>Status Lookup</span>
                         </a>
-                        @if (isAdmin || isFrontDesk)
+                        @if ((isAdmin || isFrontDesk) && hasLicense)
                         {
                             <a class="app-bell-btn" asp-controller="Notification" asp-action="Index" title="Notifications" aria-label="Notifications">
                                 <i class="bi bi-bell-fill"></i>

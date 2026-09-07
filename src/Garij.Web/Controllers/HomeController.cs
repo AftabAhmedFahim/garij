@@ -61,6 +61,22 @@ public class HomeController : Controller
         return View(model);
     }
 
+    [HttpGet]
+    [Route("About")]
+    public IActionResult About() => View();
+
+    [HttpGet]
+    [Route("Services")]
+    public IActionResult Services() => View();
+
+    [HttpGet]
+    [Route("Testimonials")]
+    public IActionResult Testimonials() => View();
+
+    [HttpGet]
+    [Route("Pricing")]
+    public IActionResult Pricing() => View();
+
     private static string FirstProvided(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
 
