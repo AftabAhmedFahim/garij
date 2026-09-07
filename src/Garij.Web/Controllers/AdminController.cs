@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
 using Garij.Infrastructure.Persistence;
@@ -15,20 +17,27 @@ public class AdminController : Controller
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly GarijDbContext _context;
+    private readonly IProjectPurchaseService _purchaseService;
 
     public AdminController(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        GarijDbContext context)
+        GarijDbContext context,
+        IProjectPurchaseService purchaseService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _context = context;
+        _purchaseService = purchaseService;
     }
 
     [HttpGet]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+        ViewBag.GarageName = await _purchaseService.GetWorkshopNameAsync(userId, email);
+        ViewBag.License = await _purchaseService.GetActiveLicenseAsync(userId, email);
         return View();
     }
 
@@ -170,5 +179,46 @@ public class AdminController : Controller
 
         TempData["SuccessMessage"] = $"Role for '{staffUser.FullName}' updated to '{newRole}'.";
         return RedirectToAction(nameof(ManageRoles));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GarageSettings()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+        ViewBag.GarageName = await _purchaseService.GetWorkshopNameAsync(userId, email);
+        ViewBag.License = await _purchaseService.GetActiveLicenseAsync(userId, email);
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateGarageName(string workshopName, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(workshopName))
+        {
+            TempData["ErrorMessage"] = "Garage name cannot be empty.";
+            return RedirectToAction(nameof(GarageSettings));
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+
+        var success = await _purchaseService.UpdateWorkshopNameAsync(userId, email, workshopName);
+        if (success)
+        {
+            TempData["SuccessMessage"] = $"Garage name successfully updated to '{workshopName.Trim()}'! It is now displayed at the top.";
+        }
+        else
+        {
+            TempData["ErrorMessage"] = "Could not update garage name. Please try again.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(GarageSettings));
     }
 }

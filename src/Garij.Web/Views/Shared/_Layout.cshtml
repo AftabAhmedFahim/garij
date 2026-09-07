@@ -26,27 +26,32 @@
     <header>
         <nav class="navbar navbar-expand-lg main-navbar-sticky py-3">
             <div class="container-fluid px-lg-4">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-gear-wide-connected text-info"></i>
-                    <span>GARIJ</span>
-                    <span class="brand-glow-dot"></span>
+                @{
+                    var isAdmin = User.IsInRole("Admin");
+                    var isFrontDesk = User.IsInRole("FrontDesk");
+                    var isMechanic = User.IsInRole("Mechanic");
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+                    var hasLicense = isAdmin || (await PurchaseService.HasActiveLicenseAsync(userId, email));
+                    var garageName = await PurchaseService.GetWorkshopNameAsync(userId, email);
+                    var pendingNotificationCount = (isAdmin || isFrontDesk) && hasLicense
+                        ? (await NotificationService.GetPendingNotificationsAsync()).Count()
+                        : 0;
+                }
+                <a class="navbar-brand d-flex align-items-center gap-2 py-0" asp-area="" asp-controller="Home" asp-action="Index" title="@garageName">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4);">
+                        <i class="bi bi-gear-wide-connected text-info fs-5"></i>
+                    </div>
+                    <div class="d-flex flex-column text-start">
+                        <span class="brand-title fw-bold text-white text-uppercase" style="letter-spacing: 0.5px; font-size: 0.98rem; line-height: 1.2;">@garageName</span>
+                        <span class="font-monospace text-info" style="font-size: 0.62rem; letter-spacing: 1px; line-height: 1;">POWERED BY GARIJ</span>
+                    </div>
                 </a>
                 <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbar" aria-controls="appNavbar"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <i class="bi bi-list text-light fs-2"></i>
                 </button>
                 <div class="navbar-collapse collapse" id="appNavbar">
-                    @{
-                        var isAdmin = User.IsInRole("Admin");
-                        var isFrontDesk = User.IsInRole("FrontDesk");
-                        var isMechanic = User.IsInRole("Mechanic");
-                        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                        var email = User.FindFirstValue(ClaimTypes.Email);
-                        var hasLicense = isAdmin || (await PurchaseService.HasActiveLicenseAsync(userId, email));
-                        var pendingNotificationCount = (isAdmin || isFrontDesk) && hasLicense
-                            ? (await NotificationService.GetPendingNotificationsAsync()).Count()
-                            : 0;
-                    }
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-wrap">
                         <!-- Public Presentation Links (Always Accessible) -->
                         <li class="nav-item">

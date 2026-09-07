@@ -170,6 +170,83 @@ public class ProjectPurchaseService : IProjectPurchaseService
         return all.OrderByDescending(p => p.PurchasedAt).Select(MapToDto);
     }
 
+    public async Task<string> GetWorkshopNameAsync(string? userId = null, string? email = null)
+    {
+        // 1. Try to find the active license associated with this specific user or email
+        if (!string.IsNullOrWhiteSpace(userId) || !string.IsNullOrWhiteSpace(email))
+        {
+            var userLicense = await _purchaseRepository.GetActiveLicenseForUserAsync(userId, email);
+            if (userLicense is not null && 
+                !string.IsNullOrWhiteSpace(userLicense.WorkshopName) && 
+                userLicense.WorkshopName != "Workshop Staff Member")
+            {
+                return userLicense.WorkshopName;
+            }
+        }
+
+        // 2. Look for the primary workshop purchase record with a custom workshop name
+        var allPurchases = await _purchaseRepository.GetAllAsync();
+        var primaryPurchase = allPurchases
+            .Where(p => p.IsActive && p.Status == LicenseStatus.Active && 
+                        !string.IsNullOrWhiteSpace(p.WorkshopName) && 
+                        p.WorkshopName != "Workshop Staff Member")
+            .OrderByDescending(p => p.Amount)
+            .ThenByDescending(p => p.PurchasedAt)
+            .FirstOrDefault();
+
+        if (primaryPurchase is not null && !string.IsNullOrWhiteSpace(primaryPurchase.WorkshopName))
+        {
+            return primaryPurchase.WorkshopName;
+        }
+
+        return "Garij Master Workshop";
+    }
+
+    public async Task<bool> UpdateWorkshopNameAsync(string? userId, string? email, string newWorkshopName)
+    {
+        if (string.IsNullOrWhiteSpace(newWorkshopName))
+        {
+            return false;
+        }
+
+        var cleanName = newWorkshopName.Trim();
+
+        // 1. Find user's active license if possible
+        ProjectPurchase? licenseToUpdate = null;
+        if (!string.IsNullOrWhiteSpace(userId) || !string.IsNullOrWhiteSpace(email))
+        {
+            licenseToUpdate = await _purchaseRepository.GetActiveLicenseForUserAsync(userId, email);
+        }
+
+        // 2. If not found, find the main workshop license
+        var allPurchases = (await _purchaseRepository.GetAllAsync()).ToList();
+        if (licenseToUpdate is null)
+        {
+            licenseToUpdate = allPurchases
+                .Where(p => p.IsActive && p.Status == LicenseStatus.Active)
+                .OrderByDescending(p => p.Amount)
+                .FirstOrDefault();
+        }
+
+        if (licenseToUpdate is not null)
+        {
+            licenseToUpdate.WorkshopName = cleanName;
+            _purchaseRepository.Update(licenseToUpdate);
+
+            // Also synchronize name across any staff licenses created under this workshop or seeded
+            foreach (var staffLicense in allPurchases.Where(p => p.PaymentMethod.Contains("Staff") || p.WorkshopName == "Workshop Staff Member" || p.PaymentMethod == "SystemSeeded"))
+            {
+                staffLicense.WorkshopName = cleanName;
+                _purchaseRepository.Update(staffLicense);
+            }
+
+            await _purchaseRepository.SaveChangesAsync();
+            return true;
+        }
+
+        return false;
+    }
+
     private async Task<string> GenerateUniqueLicenseKeyAsync()
     {
         while (true)

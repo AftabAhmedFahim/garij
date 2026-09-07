@@ -172,6 +172,37 @@ public class ProjectPurchaseServiceTests : IDisposable
         Assert.Contains("Invalid license key", result.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task UpdateWorkshopName_And_GetWorkshopName_UpdatesSuccessfully()
+    {
+        var purchase = new ProjectPurchase
+        {
+            LicenseKey = "GRJ-LIC-GARAGE-NAME-TEST",
+            IdentityUserId = "owner-id",
+            BuyerName = "Garage Owner",
+            BuyerEmail = "owner@test.com",
+            WorkshopName = "Initial Garage Name",
+            Amount = 499.00m,
+            Currency = "USD",
+            PaymentMethod = "CreditCard",
+            TransactionReference = "TXN-NAME-1111",
+            PurchasedAt = DateTime.UtcNow,
+            Status = LicenseStatus.Active,
+            IsActive = true
+        };
+        await _repository.AddAsync(purchase);
+        await _repository.SaveChangesAsync();
+
+        var initialName = await _service.GetWorkshopNameAsync("owner-id", "owner@test.com");
+        Assert.Equal("Initial Garage Name", initialName);
+
+        var updateResult = await _service.UpdateWorkshopNameAsync("owner-id", "owner@test.com", "Apex Performance Tuning");
+        Assert.True(updateResult);
+
+        var updatedName = await _service.GetWorkshopNameAsync("owner-id", "owner@test.com");
+        Assert.Equal("Apex Performance Tuning", updatedName);
+    }
+
     public void Dispose()
     {
         _connection.Dispose();

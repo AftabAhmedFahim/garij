@@ -73,6 +73,21 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-09-08] - Custom Garage Naming & Top Navigation Branding (Rakibul Islam Emon)
+- **Admin Garage Naming & Branding**:
+  - Implemented the ability for the admin/workshop owner who purchased the project to give their garage a custom name or rename it anytime.
+  - Added `GetWorkshopNameAsync` and `UpdateWorkshopNameAsync` to [IProjectPurchaseService.cs](file:///home/rakibul/Projects/garij/src/Garij.Application/Interfaces/IProjectPurchaseService.cs) and [ProjectPurchaseService.cs](file:///home/rakibul/Projects/garij/src/Garij.Application/Services/ProjectPurchaseService.cs).
+  - Synchronizes custom garage name across the owner's license and all associated garage staff licenses (front desk, mechanics) so the entire team sees the custom garage name everywhere.
+  - Implemented `AdminController.GarageSettings` (`GET` and `POST`) and dedicated view [Views/Admin/GarageSettings.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/GarageSettings.cshtml) with interactive live top-bar preview as the user types.
+  - Added "Garage Identity & Branding" quick-edit banner to the Admin Dashboard ([Views/Admin/Index.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/Index.cshtml)).
+- **Prominent Top Navigation Display**:
+  - Updated main system layout [_Layout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_Layout.cshtml) to prominently display the custom garage name at the very top of every page with "POWERED BY GARIJ" badge.
+  - Updated landing layout [_LandingLayout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_LandingLayout.cshtml) to display the customized garage name in the top navbar brand logo.
+- **Testing & Verification**:
+  - Added unit test `UpdateWorkshopName_And_GetWorkshopName_UpdatesSuccessfully` in [ProjectPurchaseServiceTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.UnitTests/ProjectPurchaseServiceTests.cs).
+  - Added integration test `Admin_CanRenameGarage_AndItShowsAtTheTop` in [ProjectPurchaseIntegrationTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.IntegrationTests/ProjectPurchaseIntegrationTests.cs).
+  - 100% test pass rate across the solution (76/76 tests passing).
+
 ### [2026-09-08] - Buyer Role Selection & Staff Account Management (Rakibul Islam Emon)
 - **Buyer Role Selection at Checkout**:
   - Extended [CreateProjectPurchaseDto.cs](file:///home/rakibul/Projects/garij/src/Garij.Application/DTOs/CreateProjectPurchaseDto.cs) with `AccountRole` property (defaults to `Admin` / Workshop Owner).

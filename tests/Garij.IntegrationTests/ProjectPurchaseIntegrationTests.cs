@@ -393,5 +393,55 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         var serviceJobsResponse = await empClient.GetAsync("/ServiceJob");
         Assert.Equal(HttpStatusCode.OK, serviceJobsResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task Admin_CanRenameGarage_AndItShowsAtTheTop()
+    {
+        var client = CreateNonRedirectingClient();
+
+        // 1. Log in as admin (project owner)
+        var loginPage = await client.GetAsync("/Account/Login");
+        var loginToken = await ExtractAntiForgeryTokenAsync(loginPage);
+
+        var loginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = "admin@garij.com",
+            ["Password"] = "Admin@12345",
+            ["__RequestVerificationToken"] = loginToken,
+        });
+
+        var loginResponse = await client.PostAsync("/Account/Login", loginForm);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+
+        // 2. Open Garage Settings
+        var settingsPage = await client.GetAsync("/Admin/GarageSettings");
+        Assert.Equal(HttpStatusCode.OK, settingsPage.StatusCode);
+        var settingsToken = await ExtractAntiForgeryTokenAsync(settingsPage);
+
+        // 3. Rename Garage
+        var customGarageName = "Apex Turbo Pitstop";
+        var updateForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["workshopName"] = customGarageName,
+            ["__RequestVerificationToken"] = settingsToken,
+        });
+
+        var updateResponse = await client.PostAsync("/Admin/UpdateGarageName", updateForm);
+        Assert.Equal(HttpStatusCode.Redirect, updateResponse.StatusCode);
+
+        // 4. Visit Dashboard and verify the custom garage name is displayed at the top!
+        var dashboardPage = await client.GetAsync("/Dashboard");
+        Assert.Equal(HttpStatusCode.OK, dashboardPage.StatusCode);
+        var dashboardHtml = await dashboardPage.Content.ReadAsStringAsync();
+        Assert.Contains(customGarageName, dashboardHtml);
+        Assert.Contains("POWERED BY GARIJ", dashboardHtml);
+
+        // 5. Visit Landing page and verify the custom garage name is displayed at the top!
+        var landingPage = await client.GetAsync("/");
+        Assert.Equal(HttpStatusCode.OK, landingPage.StatusCode);
+        var landingHtml = await landingPage.Content.ReadAsStringAsync();
+        Assert.Contains(customGarageName, landingHtml);
+    }
 }
+
 

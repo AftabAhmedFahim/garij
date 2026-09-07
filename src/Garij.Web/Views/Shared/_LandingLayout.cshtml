@@ -7,11 +7,16 @@
     var isUserSignedIn = SignInManager.IsSignedIn(User);
     var isAdmin = isUserSignedIn && User.IsInRole("Admin");
     var hasActiveLicense = false;
+    var garageName = "GARIJ";
     if (isUserSignedIn)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
         hasActiveLicense = isAdmin || (await PurchaseService.HasActiveLicenseAsync(userId, email));
+        if (hasActiveLicense)
+        {
+            garageName = await PurchaseService.GetWorkshopNameAsync(userId, email);
+        }
     }
 }
 <!DOCTYPE html>
@@ -48,14 +53,19 @@
     <!-- 2. Sticky Main Navigation Bar -->
     <nav class="navbar navbar-expand-lg main-navbar-sticky py-3">
         <div class="container-fluid px-lg-5 d-flex justify-content-between align-items-center">
-            <!-- Brand Logo with Sleek Automotive Contour Emblem -->
             <a class="navbar-brand text-decoration-none py-0" asp-controller="Home" asp-action="Index">
                 <div class="brand-emblem-wrap">
                     <svg class="brand-car-emblem" viewBox="0 0 100 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 5 20 C 15 20, 24 18, 32 14 C 40 10, 47 4, 62 4 C 76 4, 83 9, 89 15 C 93 18, 96 20, 98 20" stroke="#00d2ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M 35 13 C 42 8, 50 6, 61 6 C 71 6, 78 9, 83 14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.75"/>
                     </svg>
-                    <div class="brand-title-text font-ethnocentric">GARIJ</div>
+                    <div class="d-flex flex-column text-start">
+                        <div class="brand-title-text font-ethnocentric text-uppercase" style="letter-spacing: 0.5px; font-size: 1.15rem;">@(string.IsNullOrWhiteSpace(garageName) ? "GARIJ" : garageName)</div>
+                        @if (isUserSignedIn && hasActiveLicense)
+                        {
+                            <span class="font-monospace text-info text-start" style="font-size: 0.62rem; letter-spacing: 1px; margin-top: -3px;">POWERED BY GARIJ</span>
+                        }
+                    </div>
                 </div>
             </a>
 
