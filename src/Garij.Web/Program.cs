@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.Configure<BillingSettings>(builder.Configuration.GetSection(BillingSettings.SectionName));
+builder.Services.Configure<LicenseSettings>(builder.Configuration.GetSection(LicenseSettings.SectionName));
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     {
@@ -32,7 +33,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<Garij.Web.Filters.RequireProjectLicenseAttribute>();
+});
 
 var app = builder.Build();
 

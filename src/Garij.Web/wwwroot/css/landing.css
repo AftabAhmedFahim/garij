@@ -82,6 +82,10 @@ html {
     -moz-osx-font-smoothing: grayscale;
 }
 
+section[id], div[id^="purchase-"] {
+    scroll-margin-top: 95px;
+}
+
 body.landing-page-body {
     font-family: var(--font-primary);
     background-color: var(--bg-dark-hero);

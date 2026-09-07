@@ -49,15 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Smooth Scrolling for Internal Hash Anchors
-    const smoothLinks = document.querySelectorAll('a[href^="#"]');
+    const smoothLinks = document.querySelectorAll('a[href^="#"], a[href^="/#"]');
     smoothLinks.forEach(link => {
         link.addEventListener('click', function (e) {
-            const targetId = this.getAttribute('href');
+            let targetId = this.getAttribute('href');
+            if (targetId.startsWith('/#')) {
+                if (window.location.pathname === '/' || window.location.pathname === '') {
+                    targetId = targetId.substring(1);
+                } else {
+                    return; // Allow natural navigation to /#hash
+                }
+            }
             if (targetId && targetId !== '#') {
                 const targetElement = document.querySelector(targetId);
                 if (targetElement) {
                     e.preventDefault();
-                    const navOffset = 80;
+                    const navOffset = 85;
                     const elementPosition = targetElement.getBoundingClientRect().top;
                     const offsetPosition = elementPosition + window.pageYOffset - navOffset;
 
@@ -93,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
                 navLinks.forEach(link => {
                     link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${sectionId}`) {
+                    if (link.getAttribute('href') === `#${sectionId}` || link.getAttribute('href') === `/#${sectionId}`) {
                         link.classList.add('active');
                     }
                 });
@@ -103,19 +110,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('scroll', highlightNavLink, { passive: true });
 
-    // 6. Auto-scroll to #status-tracker if navigated or query exists
-    if (window.location.hash === '#status-tracker' || window.location.search.includes('query=')) {
-        setTimeout(() => {
-            const trackerSection = document.getElementById('status-tracker');
-            if (trackerSection) {
-                const navOffset = 80;
-                const elementPosition = trackerSection.getBoundingClientRect().top;
+    // 6. Auto-scroll on page load if URL contains hash (after preloader dismisses)
+    const scrollToTarget = (targetSelector) => {
+        try {
+            const targetElement = document.querySelector(targetSelector);
+            if (targetElement) {
+                const navOffset = 85;
+                const elementPosition = targetElement.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - navOffset;
                 window.scrollTo({
                     top: offsetPosition,
                     behavior: 'smooth'
                 });
             }
-        }, 500);
+        } catch (err) {
+            // Invalid selector ignore
+        }
+    };
+
+    if (window.location.hash && window.location.hash !== '#') {
+        setTimeout(() => {
+            scrollToTarget(window.location.hash);
+        }, 600);
+    } else if (window.location.search.includes('query=')) {
+        setTimeout(() => {
+            scrollToTarget('#status-tracker');
+        }, 600);
     }
 });
