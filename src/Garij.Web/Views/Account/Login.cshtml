@@ -2,7 +2,7 @@
 
 @{
     Layout = "_AuthLayout";
-    ViewData["Title"] = "Staff Login";
+    ViewData["Title"] = "Sign In";
 }
 
 <div class="auth-card">
@@ -43,7 +43,7 @@
                 <input asp-for="RememberMe" class="form-check-input auth-check-input" />
                 <label asp-for="RememberMe" class="form-check-label text-secondary">Remember me</label>
             </div>
-            <a asp-action="Register" class="auth-link">Need an account?</a>
+            <a asp-action="Register" class="auth-link">Create an account</a>
         </div>
 
         <button type="submit" class="auth-submit-btn">
