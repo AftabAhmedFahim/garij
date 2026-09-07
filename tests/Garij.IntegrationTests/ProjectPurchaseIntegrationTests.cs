@@ -329,4 +329,69 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         Assert.DoesNotContain("BUY PROJECT", authHtml);
         Assert.Contains("LICENSED", authHtml);
     }
+
+    [Fact]
+    public async Task Jobs_CanAddEmployee_WithEmailPasswordAndRole_AndEmployeeCanLogin()
+    {
+        var managerClient = CreateNonRedirectingClient();
+
+        // 1. Log in as admin / workshop manager
+        var loginPage = await managerClient.GetAsync("/Account/Login");
+        var loginToken = await ExtractAntiForgeryTokenAsync(loginPage);
+
+        var loginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = "admin@garij.com",
+            ["Password"] = "Admin@12345",
+            ["__RequestVerificationToken"] = loginToken,
+        });
+
+        var loginResponse = await managerClient.PostAsync("/Account/Login", loginForm);
+        Assert.Equal(HttpStatusCode.Redirect, loginResponse.StatusCode);
+
+        // 2. Open Add Employee from Jobs
+        var addEmpPage = await managerClient.GetAsync("/ServiceJob/AddEmployee");
+        Assert.Equal(HttpStatusCode.OK, addEmpPage.StatusCode);
+        var addEmpToken = await ExtractAntiForgeryTokenAsync(addEmpPage);
+
+        // 3. Submit new employee form with role FrontDesk
+        var newEmployeeEmail = $"jobs_emp_{Guid.NewGuid():N}@test.com";
+        var addEmpForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["FullName"] = "Job Section Receptionist",
+            ["Email"] = newEmployeeEmail,
+            ["PhoneNumber"] = "+880 1711-443322",
+            ["Role"] = "FrontDesk",
+            ["Password"] = "Reception@12345",
+            ["ConfirmPassword"] = "Reception@12345",
+            ["__RequestVerificationToken"] = addEmpToken,
+        });
+
+        var addEmpResponse = await managerClient.PostAsync("/ServiceJob/AddEmployee", addEmpForm);
+        Assert.Equal(HttpStatusCode.Redirect, addEmpResponse.StatusCode);
+        Assert.Contains("/ServiceJob", addEmpResponse.Headers.Location!.ToString());
+
+        // 4. Log in as the new employee with email and password
+        var empClient = CreateNonRedirectingClient();
+        var empLoginPage = await empClient.GetAsync("/Account/Login");
+        var empLoginToken = await ExtractAntiForgeryTokenAsync(empLoginPage);
+
+        var empLoginForm = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = newEmployeeEmail,
+            ["Password"] = "Reception@12345",
+            ["__RequestVerificationToken"] = empLoginToken,
+        });
+
+        var empLoginResponse = await empClient.PostAsync("/Account/Login", empLoginForm);
+        Assert.Equal(HttpStatusCode.Redirect, empLoginResponse.StatusCode);
+
+        // 5. Front Desk employee can access Dashboard and Service Jobs directly without buying a license
+        var dashboardResponse = await empClient.GetAsync("/Dashboard");
+        Assert.Equal(HttpStatusCode.OK, dashboardResponse.StatusCode);
+
+        var serviceJobsResponse = await empClient.GetAsync("/ServiceJob");
+        Assert.Equal(HttpStatusCode.OK, serviceJobsResponse.StatusCode);
+    }
 }
+

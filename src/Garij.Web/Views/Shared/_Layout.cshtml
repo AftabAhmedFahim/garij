@@ -87,6 +87,11 @@
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" asp-area="" asp-controller="ServiceJob" asp-action="Index">Service Jobs</a></li>
                                         <li><a class="dropdown-item" asp-area="" asp-controller="Mechanic" asp-action="JobBoard">Job Board</a></li>
+                                        @if (isAdmin || isFrontDesk)
+                                        {
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-info fw-semibold" asp-area="" asp-controller="ServiceJob" asp-action="AddEmployee"><i class="bi bi-person-plus-fill me-2"></i>Add Employee</a></li>
+                                        }
                                     </ul>
                                 </li>
                                 <li class="nav-item dropdown">

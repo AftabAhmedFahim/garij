@@ -20,26 +20,34 @@
             <p class="app-page-subtitle mt-1">Touch-friendly workflow dashboard for active vehicle repairs &amp; diagnostic tasks.</p>
         </div>
 
-        <form method="get" asp-controller="Mechanic" asp-action="JobBoard" class="d-flex align-items-center gap-2 w-100 w-md-auto">
-            <label for="mechanicId" class="app-form-label mb-0 text-nowrap">Filter Mechanic:</label>
-            <select name="mechanicId" id="mechanicId" class="app-form-select" onchange="this.form.submit()">
-                <option value="">-- All Assigned Jobs --</option>
-                @if (mechanics != null)
-                {
-                    foreach (var item in mechanics)
+        <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto justify-content-md-end">
+            @if (User.IsInRole("Admin") || User.IsInRole("FrontDesk"))
+            {
+                <a asp-controller="ServiceJob" asp-action="AddEmployee" class="app-btn app-btn-outline app-btn-sm text-nowrap">
+                    <i class="bi bi-person-plus-fill me-1 text-info"></i> Add Employee
+                </a>
+            }
+            <form method="get" asp-controller="Mechanic" asp-action="JobBoard" class="d-flex align-items-center gap-2">
+                <label for="mechanicId" class="app-form-label mb-0 text-nowrap">Filter Mechanic:</label>
+                <select name="mechanicId" id="mechanicId" class="app-form-select" onchange="this.form.submit()">
+                    <option value="">-- All Assigned Jobs --</option>
+                    @if (mechanics != null)
                     {
-                        if (selectedMechanicId?.ToString() == item.Value)
+                        foreach (var item in mechanics)
                         {
-                            <option value="@item.Value" selected="selected">@item.Text</option>
-                        }
-                        else
-                        {
-                            <option value="@item.Value">@item.Text</option>
+                            if (selectedMechanicId?.ToString() == item.Value)
+                            {
+                                <option value="@item.Value" selected="selected">@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
                         }
                     }
-                }
-            </select>
-        </form>
+                </select>
+            </form>
+        </div>
     </div>
 </div>
 

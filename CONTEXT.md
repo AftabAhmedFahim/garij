@@ -83,12 +83,19 @@
   - Implemented `AdminController.CreateUser` (`GET` and `POST`) which registers the `IdentityUser`, assigns the role in ASP.NET Core Identity, creates a `User` in `_context.StaffUsers`, and grants staff license access so staff members do not need to purchase an individual license.
   - Updated [Views/Admin/ManageUsers.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/ManageUsers.cshtml) with modern dark automotive UI table displaying staff profiles and direct "+ Create Staff Account" navigation.
   - Enhanced [Views/Admin/ManageRoles.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Admin/ManageRoles.cshtml) to allow administrators to reassign staff roles dynamically.
+- **Jobs Section — Add Garage Employee Option**:
+  - Implemented `ServiceJobController.AddEmployee` (`GET` and `POST`) allowing workshop managers and receptionists to register garage employees directly from the Jobs workflow.
+  - Form allows entering Full Name, Email (Username), Phone Number, Role (`Mechanic`, `FrontDesk`, `Admin`), and Password.
+  - Automatically covers employee accounts under the workshop's lifetime license with zero extra charges.
+  - Added dedicated view [Views/ServiceJob/AddEmployee.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/ServiceJob/AddEmployee.cshtml).
+  - Added "+ Add Employee" button to the Service Jobs page ([Views/ServiceJob/Index.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/ServiceJob/Index.cshtml)), Mechanic Roster ([Views/Mechanic/Index.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Mechanic/Index.cshtml)), Job Board ([Views/Mechanic/JobBoard.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Mechanic/JobBoard.cshtml)), and in the primary navbar "Jobs" dropdown menu ([Views/Shared/_Layout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_Layout.cshtml)).
 - **Testing & Verification**:
   - Added integration tests to [ProjectPurchaseIntegrationTests.cs](file:///home/rakibul/Projects/garij/tests/Garij.IntegrationTests/ProjectPurchaseIntegrationTests.cs):
     1. `Admin_CanCreateStaffAccount_WithEmailPasswordAndRole_AndStaffCanLogin`: Verifies admin creates a mechanic staff account with email & password, and that mechanic can log in and view the mechanic job board.
     2. `PurchaseCheckout_WithMechanicRole_AssignsMechanicRoleAndGrantsAccess`: Verifies a buyer selecting the `Mechanic` role during checkout receives that role and can immediately log in and access the Job Board.
     3. `LicensedUser_DoesNotSeePricingInNavbar_OnLandingPage`: Verifies that once a user purchases the project or is licensed, the `PRICING` navigation menu and `BUY PROJECT` call-to-action button are completely hidden from the desktop and mobile navigation bars.
-  - Full test suite passing at 100% (73/73 tests passing).
+    4. `Jobs_CanAddEmployee_WithEmailPasswordAndRole_AndEmployeeCanLogin`: Verifies adding an employee directly from the Jobs workflow, assigning their role with email and password, and verifying immediate login and dashboard access without requiring a license purchase.
+  - Full test suite passing at 100% (74/74 tests passing).
 - **Navbar Dynamic Visibility Polish**:
   - Updated [_LandingLayout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_LandingLayout.cshtml) and [_Layout.cshtml](file:///home/rakibul/Projects/garij/src/Garij.Web/Views/Shared/_Layout.cshtml) to conditionally hide the `PRICING` menu link and `BUY PROJECT` button when a user has bought the project (or is an Admin), showing a neat `LICENSED` badge instead.
 
