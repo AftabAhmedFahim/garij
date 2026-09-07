@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }, {
             root: null,
-            threshold: 0.12,
-            rootMargin: '0px 0px -40px 0px'
+            threshold: 0.05,
+            rootMargin: '0px 0px 50px 0px'
         });
 
         revealElements.forEach(el => revealObserver.observe(el));
@@ -67,6 +67,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fallback for older browsers
         revealElements.forEach(el => el.classList.add('active'));
     }
+
+    // Safety: immediately reveal elements in or near initial viewport
+    setTimeout(() => {
+        revealElements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 150) {
+                el.classList.add('active');
+            }
+        });
+    }, 120);
+
+    // Absolute safety fallback: guarantee all text is visible after 500ms
+    setTimeout(() => {
+        revealElements.forEach(el => el.classList.add('active'));
+    }, 500);
 
     // 3. Smooth Scrolling for Internal Hash Anchors
     const smoothLinks = document.querySelectorAll('a[href^="#"], a[href^="/#"]');

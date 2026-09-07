@@ -1875,6 +1875,47 @@ body.landing-page-body {
     display: none !important;
 }
 
+/* Base Subpage & Section Classes (Dark Mode Default) */
+.landing-subpage-container {
+    background: linear-gradient(180deg, #07090e 0%, #0d111a 100%);
+    min-height: 80vh;
+}
+
+.services-home-section {
+    background-color: #0b0d12;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pricing-home-section {
+    background-color: #07090e;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pricing-showcase-card,
+.pricing-main-card,
+.subpage-callout-card {
+    background: linear-gradient(145deg, #11151f 0%, #0d1017 100%);
+}
+
+@media (max-width: 991.98px) {
+    #landingNavbarNav {
+        background: rgba(11, 14, 19, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-top: 0.75rem;
+        border: 1px solid rgba(0, 168, 255, 0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    #landingNavbarNav .nav-link {
+        padding: 0.65rem 1rem !important;
+        font-size: 0.9rem;
+    }
+}
+
 /* ==========================================================================
    LIGHT MODE DESIGN SYSTEM — MINIMAL, ELEGANT, BRIGHT THEME COLORS
    Zero images, clean crisp white and porcelain surfaces, energetic cyan & blue
@@ -2038,17 +2079,18 @@ body.landing-page-body {
 
 /* 4. Hero Section in Light Mode (No factory photo, clean minimal gradient) */
 [data-theme="light"] .hero-template-section {
-    background: radial-gradient(circle at 85% 25%, rgba(2, 132, 199, 0.08) 0%, rgba(248, 250, 252, 0.95) 55%), linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    background: #f8fafc !important;
     background-image: none !important;
     border-bottom: 1px solid #e2e8f0 !important;
 }
 
 [data-theme="light"] .hero-template-overlay {
-    background: radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.3) 100%) !important;
+    display: none !important;
 }
 
 [data-theme="light"] .hero-slide-title {
     color: #0f172a !important;
+    text-shadow: none !important;
 }
 
 [data-theme="light"] .hero-slide-kicker {
@@ -2311,69 +2353,107 @@ body.landing-page-body {
     color: #0284c7 !important;
 }
 
-[data-theme="light"] #services {
+[data-theme="light"] #services,
+[data-theme="light"] .services-home-section {
     background-color: #ffffff !important;
+    background-image: none !important;
     border-top: 1px solid #e2e8f0 !important;
     border-bottom: 1px solid #e2e8f0 !important;
 }
 
-[data-theme="light"] #services h2 {
+[data-theme="light"] #services h2,
+[data-theme="light"] .services-home-section h2 {
     color: #0f172a !important;
 }
 
-[data-theme="light"] #services p {
+[data-theme="light"] #services p,
+[data-theme="light"] .services-home-section p {
     color: #64748b !important;
 }
 
-[data-theme="light"] #services .rounded-3 {
+[data-theme="light"] #services .rounded-3,
+[data-theme="light"] .services-home-section .rounded-3 {
     background: #f8fafc !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
 }
 
-[data-theme="light"] #services .rounded-3 h4 {
+[data-theme="light"] #services .rounded-3 h4,
+[data-theme="light"] .services-home-section .rounded-3 h4 {
     color: #0f172a !important;
 }
 
-[data-theme="light"] #services .rounded-3 .text-info {
+[data-theme="light"] #services .rounded-3 .text-info,
+[data-theme="light"] .services-home-section .rounded-3 .text-info {
     color: #0284c7 !important;
 }
 
-[data-theme="light"] #pricing {
+[data-theme="light"] #pricing,
+[data-theme="light"] .pricing-home-section {
     background-color: #f8fafc !important;
+    background-image: none !important;
     border-top: 1px solid #e2e8f0 !important;
     border-bottom: 1px solid #e2e8f0 !important;
 }
 
-[data-theme="light"] #pricing h2 {
+[data-theme="light"] #pricing h2,
+[data-theme="light"] .pricing-home-section h2 {
     color: #0f172a !important;
 }
 
-[data-theme="light"] #pricing .rounded-4 {
+[data-theme="light"] #pricing .rounded-4,
+[data-theme="light"] .pricing-home-section .rounded-4,
+[data-theme="light"] .pricing-showcase-card,
+[data-theme="light"] .pricing-main-card,
+[data-theme="light"] .subpage-callout-card {
     background: #ffffff !important;
+    background-image: none !important;
     border: 1.5px solid rgba(2, 132, 199, 0.35) !important;
     box-shadow: 0 15px 40px rgba(2, 132, 199, 0.08) !important;
 }
 
-[data-theme="light"] #pricing h3 {
+[data-theme="light"] #pricing h3,
+[data-theme="light"] .pricing-showcase-card h3,
+[data-theme="light"] .pricing-main-card h3 {
     color: #0f172a !important;
+    text-shadow: none !important;
 }
 
-[data-theme="light"] #pricing ul li {
+[data-theme="light"] #pricing ul li,
+[data-theme="light"] .pricing-showcase-card ul li,
+[data-theme="light"] .pricing-main-card ul li {
     color: #334155 !important;
 }
 
-[data-theme="light"] #pricing ul li i {
+[data-theme="light"] #pricing ul li i,
+[data-theme="light"] .pricing-showcase-card ul li i,
+[data-theme="light"] .pricing-main-card ul li i {
     color: #0284c7 !important;
 }
 
-[data-theme="light"] #pricing .bg-dark {
+[data-theme="light"] #pricing .bg-dark,
+[data-theme="light"] .pricing-home-section .bg-dark,
+[data-theme="light"] .pricing-main-card .bg-dark {
     background: #f1f5f9 !important;
     border: 1px solid #e2e8f0 !important;
 }
 
-[data-theme="light"] #pricing .display-5 {
+[data-theme="light"] #pricing .display-5,
+[data-theme="light"] .pricing-home-section .display-5,
+[data-theme="light"] .pricing-main-card .display-5 {
     color: #0284c7 !important;
+}
+
+/* Subpage Containers in Light Mode */
+[data-theme="light"] .landing-subpage-container {
+    background: #f8fafc !important;
+    background-image: none !important;
+}
+
+[data-theme="light"] #landingNavbarNav {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
 }
 
 /* 8. Automotive Footer & Preloader in Light Mode */
@@ -2411,14 +2491,22 @@ body.landing-page-body {
 }
 
 [data-theme="light"] .text-white,
-[data-theme="light"] .text-light {
+[data-theme="light"] .text-light,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
     color: #0f172a !important;
+    text-shadow: none !important;
 }
 
 [data-theme="light"] .text-secondary,
 [data-theme="light"] .text-muted,
-[data-theme="light"] .text-white-50 {
-    color: #64748b !important;
+[data-theme="light"] .text-white-50,
+[data-theme="light"] p {
+    color: #475569 !important;
 }
 
 [data-theme="light"] .text-info {

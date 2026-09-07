@@ -63,18 +63,22 @@ public class HomeController : Controller
 
     [HttpGet]
     [Route("About")]
+    [Route("Home/About")]
     public IActionResult About() => View();
 
     [HttpGet]
     [Route("Services")]
+    [Route("Home/Services")]
     public IActionResult Services() => View();
 
     [HttpGet]
     [Route("Testimonials")]
+    [Route("Home/Testimonials")]
     public IActionResult Testimonials() => View();
 
     [HttpGet]
     [Route("Pricing")]
+    [Route("Home/Pricing")]
     public IActionResult Pricing() => View();
 
     private static string FirstProvided(params string?[] values) =>
