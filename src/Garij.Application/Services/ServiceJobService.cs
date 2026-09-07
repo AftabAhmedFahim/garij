@@ -161,6 +161,11 @@ public class ServiceJobService : IServiceJobService
         var mechanic = await _userRepository.GetByIdAsync(userId)
             ?? throw new NotFoundException(nameof(User), userId);
 
+        if (mechanic.Role != UserRole.Mechanic)
+        {
+            throw new BusinessRuleException("BR-003", $"Only users with the Mechanic role can be assigned to service jobs. User '{mechanic.FullName}' has role '{mechanic.Role}'.");
+        }
+
         var existingAssignments = await _mechanicAssignmentRepository.GetAssignmentsByJobIdAsync(serviceJobId);
 
         if (existingAssignments.Any(a => a.UserId == userId))

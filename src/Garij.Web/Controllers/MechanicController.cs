@@ -26,7 +26,7 @@ public class MechanicController : Controller
     public async Task<IActionResult> Index()
     {
         var users = await _userRepository.GetAllAsync();
-        var mechanics = users.Where(u => u.Role == UserRole.Mechanic || u.Role == UserRole.Admin)
+        var mechanics = users.Where(u => u.Role == UserRole.Mechanic)
                              .OrderBy(u => u.FullName);
 
         return View(mechanics);
@@ -217,11 +217,11 @@ public class MechanicController : Controller
     private async Task PopulateMechanicsDropDownList(object? selectedMechanic = null)
     {
         var users = await _userRepository.GetAllAsync();
-        var mechanics = users.Where(u => u.Role == UserRole.Mechanic || u.Role == UserRole.Admin)
+        var mechanics = users.Where(u => u.Role == UserRole.Mechanic)
                              .Select(u => new
                              {
                                  u.Id,
-                                 DisplayText = $"{u.FullName} ({u.Role})"
+                                 DisplayText = u.FullName
                              })
                              .OrderBy(u => u.DisplayText);
 

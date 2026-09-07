@@ -272,6 +272,43 @@ public class ServiceJobServiceTests : IDisposable
         Assert.Equal("BR-003", ex.RuleCode);
     }
 
+    [Fact]
+    public async Task AssignMechanicAsync_ThrowsBusinessRuleException_WhenUserIsNotMechanic()
+    {
+        // Arrange
+        var customer = new Customer { FullName = "Test", Email = "nonmech@test.com", PhoneNumber = "123", Address = "Test" };
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        var vehicle = new Vehicle { CustomerId = customer.Id, LicensePlateNumber = "DHA-6060", Make = "Toyota", Model = "Corolla", Year = 2023, Vin = "VIN606", Color = "White" };
+        _context.Vehicles.Add(vehicle);
+        await _context.SaveChangesAsync();
+
+        var adminIdentity = new Microsoft.AspNetCore.Identity.IdentityUser { Id = "admin-user", UserName = "admin@test.com", Email = "admin@test.com" };
+        var frontDeskIdentity = new Microsoft.AspNetCore.Identity.IdentityUser { Id = "fd-user", UserName = "fd@test.com", Email = "fd@test.com" };
+        _context.Users.AddRange(adminIdentity, frontDeskIdentity);
+        await _context.SaveChangesAsync();
+
+        var adminUser = new User { IdentityUserId = adminIdentity.Id, FullName = "Admin Alex", Email = "admin@test.com", Role = UserRole.Admin };
+        var frontDeskUser = new User { IdentityUserId = frontDeskIdentity.Id, FullName = "Desk Dana", Email = "fd@test.com", Role = UserRole.FrontDesk };
+        _context.StaffUsers.AddRange(adminUser, frontDeskUser);
+        await _context.SaveChangesAsync();
+
+        var job = await _serviceJobService.CreateServiceJobAsync(new ServiceJobDto { VehicleId = vehicle.Id, JobType = JobType.RoutineService });
+
+        // Act & Assert for Admin: Must fail with BR-003
+        var exAdmin = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _serviceJobService.AssignMechanicAsync(job.Id, adminUser.Id, RoleInJob.Lead));
+        Assert.Equal("BR-003", exAdmin.RuleCode);
+        Assert.Contains("Only users with the Mechanic role can be assigned", exAdmin.Message);
+
+        // Act & Assert for FrontDesk: Must fail with BR-003
+        var exFd = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _serviceJobService.AssignMechanicAsync(job.Id, frontDeskUser.Id, RoleInJob.Assistant));
+        Assert.Equal("BR-003", exFd.RuleCode);
+        Assert.Contains("Only users with the Mechanic role can be assigned", exFd.Message);
+    }
+
     public void Dispose()
     {
         _context.Dispose();
