@@ -44,8 +44,8 @@
         </div>
     </div>
 
-    <!-- 2. Sticky Main Navigation Bar (Mockup Minimalist Header) -->
-    <nav class="navbar navbar-expand main-navbar-sticky py-3">
+    <!-- 2. Sticky Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg main-navbar-sticky py-3">
         <div class="container-fluid px-lg-5 d-flex justify-content-between align-items-center">
             <!-- Brand Logo with Sleek Automotive Contour Emblem -->
             <a class="navbar-brand text-decoration-none py-0" asp-controller="Home" asp-action="Index">
@@ -58,33 +58,9 @@
                 </div>
             </a>
 
-            <!-- Right Actions: Status Pill + Auth Buttons + Menu Button -->
-            <div class="d-flex align-items-center gap-2 gap-sm-3">
-                <!-- Status Lookup Quick Button -->
-                <a href="#status-tracker" class="btn-nav-status-pill d-none d-lg-inline-flex" title="Track your vehicle service progress">
-                    <i class="bi bi-radar text-info"></i>
-                    <span>Status Lookup</span>
-                </a>
-
-                @if (SignInManager.IsSignedIn(User))
-                {
-                    var isAdmin = User.IsInRole("Admin");
-                    var isMechanic = User.IsInRole("Mechanic");
-                    var isFrontDesk = User.IsInRole("FrontDesk");
-
-                    @if (isAdmin || isFrontDesk)
-                    {
-                        <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login d-inline-flex">
-                            <i class="bi bi-speedometer2 me-1"></i>
-                            <span>Dashboard</span>
-            <!-- Mobile Toggler -->
-            <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbar" aria-controls="landingNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="bi bi-list text-light fs-2"></i>
-            </button>
-
-            <!-- Navigation Links & Rounded Action Buttons -->
-            <div class="collapse navbar-collapse" id="landingNavbar">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+            <!-- Center Navigation Links (Desktop) -->
+            <div class="d-none d-xl-flex">
+                <ul class="navbar-nav mx-auto mb-0 flex-row gap-4">
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Index">HOME</a>
                     </li>
@@ -101,59 +77,51 @@
                         <a class="nav-link" asp-controller="Home" asp-action="Pricing">PRICING</a>
                     </li>
                 </ul>
+            </div>
 
-                <!-- Dedicated Rounded Glowing Action Buttons: Status Lookup, Buy Project, Register, Login -->
-                <div class="d-flex align-items-center flex-wrap gap-2">
-                    <!-- Buy Project Lifetime Button -->
-                    <a asp-controller="Purchase" asp-action="Index" class="btn-nav-glow-buy" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #050b14; font-weight: 700; border-radius: 50px; padding: 7px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); font-size: 0.85rem;">
-                        <i class="bi bi-cart-check-fill"></i>
-                        <span>BUY PROJECT</span>
-                    </a>
+            <!-- Right Actions: Buy Project + Status Pill + Auth Buttons + Offcanvas Menu Toggle -->
+            <div class="d-flex align-items-center gap-2 gap-sm-3">
+                <!-- Buy Project Lifetime Button -->
+                <a asp-controller="Purchase" asp-action="Index" class="btn-nav-glow-buy" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #050b14; font-weight: 700; border-radius: 50px; padding: 7px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); font-size: 0.85rem;">
+                    <i class="bi bi-cart-check-fill"></i>
+                    <span>BUY PROJECT</span>
+                </a>
 
-                    <!-- Status Lookup Button (Smoothly brings down to Landing Page Status Lookup section) -->
-                    <a href="/#status-tracker" class="btn-nav-glow-lookup" title="Track your vehicle service progress">
-                        <i class="bi bi-search"></i>
-                        <span>Status Lookup</span>
-                    </a>
+                <!-- Status Lookup Quick Button -->
+                <a href="/#status-tracker" class="btn-nav-status-pill d-none d-lg-inline-flex" title="Track your vehicle service progress">
+                    <i class="bi bi-radar text-info"></i>
+                    <span>Status Lookup</span>
+                </a>
 
-                    @if (isUserSignedIn)
+                @if (isUserSignedIn)
+                {
+                    var isAdmin = User.IsInRole("Admin");
+                    var isMechanic = User.IsInRole("Mechanic");
+                    var isFrontDesk = User.IsInRole("FrontDesk");
+
+                    if (hasActiveLicense || isAdmin)
                     {
-                        var isAdmin = User.IsInRole("Admin");
-                        var isMechanic = User.IsInRole("Mechanic");
-                        var isFrontDesk = User.IsInRole("FrontDesk");
-
-                        if (hasActiveLicense || isAdmin)
+                        if (isAdmin || isFrontDesk)
                         {
-                            if (isAdmin || isFrontDesk)
-                            {
-                                <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login">
-                                    <i class="bi bi-speedometer2"></i> Dashboard
-                                </a>
-                            }
-                            else if (isMechanic)
-                            {
-                                <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login">
-                                    <i class="bi bi-wrench"></i> Job Board
-                                </a>
-                            }
-                        }
-                        else
-                        {
-                            <!-- Unlicensed user: explicitly show Dashboard Locked button leading to Purchase -->
-                            <a asp-controller="Purchase" asp-action="Index" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center gap-2 text-warning" title="Dashboard is locked until a lifetime license is purchased">
-                                <i class="bi bi-lock-fill"></i>
-                                <span>Dashboard (Locked)</span>
+                            <a asp-controller="Dashboard" asp-action="Index" class="btn-nav-glow-login d-inline-flex">
+                                <i class="bi bi-speedometer2 me-1"></i>
+                                <span>Dashboard</span>
                             </a>
                         }
-                        <a asp-controller="Account" asp-action="Logout" class="btn-nav-glow-register">
-                            <i class="bi bi-box-arrow-right"></i> Logout
-                        </a>
+                        else if (isMechanic)
+                        {
+                            <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login d-inline-flex">
+                                <i class="bi bi-wrench me-1"></i>
+                                <span>Job Board</span>
+                            </a>
+                        }
                     }
-                    else if (isMechanic)
+                    else
                     {
-                        <a asp-controller="Mechanic" asp-action="JobBoard" class="btn-nav-glow-login d-inline-flex">
-                            <i class="bi bi-wrench me-1"></i>
-                            <span>Job Board</span>
+                        <!-- Unlicensed user: explicitly show Dashboard Locked button leading to Purchase -->
+                        <a asp-controller="Purchase" asp-action="Index" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center gap-2 text-warning" title="Dashboard is locked until a lifetime license is purchased">
+                            <i class="bi bi-lock-fill"></i>
+                            <span>Dashboard (Locked)</span>
                         </a>
                     }
                     <a asp-controller="Account" asp-action="Logout" class="btn-nav-glow-register d-none d-sm-inline-flex">
@@ -206,38 +174,47 @@
                 <!-- Primary Navigation Links -->
                 <ul class="offcanvas-nav-list">
                     <li>
-                        <a class="offcanvas-nav-link active" href="#hero" data-bs-dismiss="offcanvas">
+                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Index" data-bs-dismiss="offcanvas">
                             <span class="link-num">01</span>
                             <span>HOME</span>
                         </a>
                     </li>
                     <li>
-                        <a class="offcanvas-nav-link" href="#about" data-bs-dismiss="offcanvas">
+                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="About" data-bs-dismiss="offcanvas">
                             <span class="link-num">02</span>
                             <span>ABOUT WORKSHOP</span>
                         </a>
                     </li>
                     <li>
-                        <a class="offcanvas-nav-link" href="#services" data-bs-dismiss="offcanvas">
+                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Services" data-bs-dismiss="offcanvas">
                             <span class="link-num">03</span>
                             <span>SERVICES</span>
                         </a>
                     </li>
                     <li>
-                        <a class="offcanvas-nav-link" href="#testimonials" data-bs-dismiss="offcanvas">
+                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Testimonials" data-bs-dismiss="offcanvas">
                             <span class="link-num">04</span>
                             <span>TESTIMONIALS</span>
                         </a>
                     </li>
-
+                    <li>
+                        <a class="offcanvas-nav-link" asp-controller="Home" asp-action="Pricing" data-bs-dismiss="offcanvas">
+                            <span class="link-num">05</span>
+                            <span>PRICING &amp; LICENSE</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="offcanvas-nav-link text-info" asp-controller="Purchase" asp-action="Index" data-bs-dismiss="offcanvas">
+                            <span class="link-num">06</span>
+                            <span>BUY PROJECT</span>
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- Action CTA: Make Appointment -->
                 <div class="mb-2">
-                    <a href="#status-tracker" class="btn-nav-appointment w-100 py-3 text-center d-block rounded-3" data-bs-dismiss="offcanvas">
+                    <a href="/#status-tracker" class="btn-nav-appointment w-100 py-3 text-center d-block rounded-3" data-bs-dismiss="offcanvas">
                         <i class="bi bi-calendar-check me-2"></i>
-                    <!-- Make Appointment CTA -->
-                    <a href="/#status-tracker" class="btn-nav-appointment">
                         <span>MAKE APPOINTMENT</span>
                     </a>
                 </div>
@@ -250,7 +227,7 @@
                     <a href="tel:+8801711234567" class="text-info text-decoration-none fw-bold">+880 1711-234567</a>
                 </div>
                 <div class="text-secondary small mb-1">
-                    <i class="bi bi-geo-alt me-1 text-info"></i> 141 & 142, Love Road, Tejgaon Industrial Area, Dhaka-1208
+                    <i class="bi bi-geo-alt me-1 text-info"></i> 141 &amp; 142, Love Road, Tejgaon Industrial Area, Dhaka-1208
                 </div>
                 <div class="text-muted small">
                     <i class="bi bi-clock me-1 text-info"></i> Sat - Thu: 08:00 AM - 08:00 PM
@@ -294,11 +271,11 @@
                 <div class="col-lg-2 col-md-6">
                     <h5 class="footer-heading">NAVIGATION</h5>
                     <ul class="footer-links-list">
-                        <li><a href="/#hero">Home</a></li>
-                        <li><a href="/#about">About Workshop</a></li>
-                        <li><a href="/#services">Our Services</a></li>
-                        <li><a href="/#testimonials">Testimonials</a></li>
-                        <li><a href="/#pricing">Pricing &amp; License</a></li>
+                        <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li><a asp-controller="Home" asp-action="About">About Workshop</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Our Services</a></li>
+                        <li><a asp-controller="Home" asp-action="Testimonials">Testimonials</a></li>
+                        <li><a asp-controller="Home" asp-action="Pricing">Pricing &amp; License</a></li>
                         <li><a href="/#status-tracker">Track Service Status</a></li>
                     </ul>
                 </div>
@@ -307,18 +284,18 @@
                 <div class="col-lg-3 col-md-6">
                     <h5 class="footer-heading">SERVICES</h5>
                     <ul class="footer-links-list">
-                        <li><a href="/#services">Complete Engine Overhaul</a></li>
-                        <li><a href="/#services">Performance ECU Tuning</a></li>
-                        <li><a href="/#services">Brembo & Disc Brakes</a></li>
-                        <li><a href="/#services">Transmission Fluid & Parts</a></li>
-                        <li><a href="/#services">Neon & Custom Lighting</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Complete Engine Overhaul</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Performance ECU Tuning</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Brembo &amp; Disc Brakes</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Transmission Fluid &amp; Parts</a></li>
+                        <li><a asp-controller="Home" asp-action="Services">Neon &amp; Custom Lighting</a></li>
                     </ul>
                 </div>
 
                 <!-- Col 4: Contact & Working Hours -->
                 <div class="col-lg-3 col-md-6">
-                    <h5 class="footer-heading">HOURS & LOCATION</h5>
-                    <p class="small mb-1 text-light"><i class="bi bi-geo-alt text-info me-2"></i>141 & 142, Love Road, Tejgaon Industrial Area, Dhaka-1208</p>
+                    <h5 class="footer-heading">HOURS &amp; LOCATION</h5>
+                    <p class="small mb-1 text-light"><i class="bi bi-geo-alt text-info me-2"></i>141 &amp; 142, Love Road, Tejgaon Industrial Area, Dhaka-1208</p>
                     <p class="small mb-1 text-light"><i class="bi bi-telephone text-info me-2"></i><a href="tel:+8801711234567" class="text-light text-decoration-none">+880 1711-234567</a></p>
                     <p class="small mb-3 text-light"><i class="bi bi-envelope text-info me-2"></i><a href="mailto:garij@gmail.com" class="text-light text-decoration-none">garij@gmail.com</a></p>
                     <div class="p-2 rounded-3 bg-dark border border-secondary border-opacity-25 small">
@@ -332,10 +309,10 @@
             <!-- Bottom Copyright Bar -->
             <div class="footer-bottom-bar d-flex justify-content-between align-items-center flex-wrap">
                 <div>
-                    &copy; 2026 <strong>GARIJ</strong> - All Rights Reserved. Creative & Professional Automotive Engineering.
+                    &copy; 2026 <strong>GARIJ</strong> - All Rights Reserved. Creative &amp; Professional Automotive Engineering.
                 </div>
                 <div class="d-flex gap-3">
-                    <a href="#status-tracker" class="text-secondary text-decoration-none small">Status Lookup</a>
+                    <a href="/#status-tracker" class="text-secondary text-decoration-none small">Status Lookup</a>
                     <a asp-controller="Account" asp-action="Login" class="text-secondary text-decoration-none small">Staff Portal</a>
                 </div>
             </div>
