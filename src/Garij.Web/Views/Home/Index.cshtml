@@ -23,37 +23,78 @@
 }
 
 <!-- ==========================================================================
-     1. HERO SECTION
+     1. HERO SECTION (Matching Automotive Robotic Factory Template)
      ========================================================================== -->
-<section id="hero" class="hero-section">
-    <div class="hero-overlay"></div>
+<section id="hero" class="hero-template-section">
+    <div class="hero-template-overlay"></div>
 
-    <div class="container position-relative">
-        <div class="hero-content reveal">
-            <!-- Winged Repair Service Emblem Badge -->
-            <div class="hero-badge-wrap">
-                <img src="~/images/repair-badge.svg" alt="Repair Service 1983 Tuning Badge" class="hero-badge-img img-fluid" />
+    <div class="hero-content-wrapper">
+        <div class="hero-slides-container">
+            <!-- Slide 1: Primary Template Headline (Matches Mockup Image 1) -->
+            <div class="hero-slide-item active" data-slide-index="0">
+                <h1 class="hero-slide-title">
+                    <span class="d-block">Drive Better With</span>
+                    <span class="d-block">Expert Car Repair.</span>
+                </h1>
+                <p class="hero-slide-subtext">
+                    From engine diagnostics to full-service fixes, we bring your vehicle back to life.
+                </p>
+                <div class="hero-slide-actions">
+                    <a href="#status-tracker" class="btn-hero-book-repair">
+                        <span>Book Your Repair</span>
+                    </a>
+                </div>
             </div>
 
-            <!-- Headings -->
-            <p class="hero-kicker">MECHANIC SERVICES</p>
-            <h1 class="hero-title">CREATIVE &amp; PROFESSIONAL</h1>
+            <!-- Slide 2: Creative & Professional (Current Design Writing) -->
+            <div class="hero-slide-item" data-slide-index="1">
+                <div class="hero-slide-kicker">GARIJ WORKSHOP</div>
+                <h2 class="hero-slide-title">
+                    <span class="d-block">Creative &amp;</span>
+                    <span class="d-block">Professional.</span>
+                </h2>
+                <p class="hero-slide-subtext">
+                    Comprehensive restorations, high-precision electronic diagnostics, suspension recalibration, and bespoke performance tuning.
+                </p>
+                <div class="hero-slide-actions">
+                    <a href="#services" class="btn-hero-book-repair">
+                        <span>Explore Services</span>
+                    </a>
+                </div>
+            </div>
 
-            <!-- CTA Action Button -->
-            <div class="hero-btn-group">
-                <a href="#about" class="btn-hero-readmore">
-                    <span>READ MORE</span>
-                </a>
+            <!-- Slide 3: Heritage & Integrity (Current Design Writing) -->
+            <div class="hero-slide-item" data-slide-index="2">
+                <div class="hero-slide-kicker">PRECISION CRAFTSMANSHIP</div>
+                <h2 class="hero-slide-title">
+                    <span class="d-block">25 Years Reputation</span>
+                    <span class="d-block">Full Integrity.</span>
+                </h2>
+                <p class="hero-slide-subtext">
+                    Complete transparency with digital work orders, itemized genuine parts logs, upfront pricing, and live telemetry tracking.
+                </p>
+                <div class="hero-slide-actions">
+                    <a href="#status-tracker" class="btn-hero-book-repair">
+                        <span>Track Vehicle Status</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Vertical Pagination Slider Dots (Right Edge) -->
-    <div class="hero-slider-dots d-none d-lg-flex">
-        <div class="slider-dot active" title="Slide 1"></div>
-        <div class="slider-dot" title="Slide 2"></div>
-        <div class="slider-dot" title="Slide 3"></div>
-        <div class="slider-dot" title="Slide 4"></div>
+    <!-- Bottom-Right Slider Navigation Controls (Matching Mockup Image 1) -->
+    <div class="hero-slider-nav">
+        <div class="hero-slide-indicators d-none d-sm-flex">
+            <span class="slide-indicator active" data-index="0" title="Slide 1"></span>
+            <span class="slide-indicator" data-index="1" title="Slide 2"></span>
+            <span class="slide-indicator" data-index="2" title="Slide 3"></span>
+        </div>
+        <button type="button" class="btn-hero-slider" id="heroPrevBtn" aria-label="Previous Slide">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <button type="button" class="btn-hero-slider" id="heroNextBtn" aria-label="Next Slide">
+            <i class="bi bi-arrow-right"></i>
+        </button>
     </div>
 </section>
 
@@ -75,9 +116,9 @@
                     </p>
                 </div>
 
-                <!-- Tuned Sports Car with Glowing Blue Rims & Underglow -->
+                <!-- Automotive Renovation & Mechanics Illustration -->
                 <div class="renovation-car-wrap">
-                    <img src="~/images/renovation-car.png" alt="High-Performance Tuned Vehicle with Neon Underglow" class="renovation-car-img" />
+                    <img src="~/images/renovation-mechanics-car.png" asp-append-version="true" alt="Automotive Renovation, Diagnostics and Performance Workshop Craftsmanship" class="renovation-car-img" />
                 </div>
             </div>
 
@@ -347,50 +388,50 @@
 
         <!-- 3 Column Cards -->
         <div class="row g-4">
-            <!-- Testimonial 1: Bill Alvarado -->
+            <!-- Testimonial 1: Rahim -->
             <div class="col-lg-4 col-md-6 reveal-left">
                 <div class="testimonial-card">
                     <div class="testimonial-quote-icon">
                         <i class="bi bi-quote"></i>
                     </div>
                     <p class="testimonial-quote-text">
-                        "Sed vitae placerat velit, non semper nibh. Maecenas pharetra risus vitae sodales vulputate. Praesent accumsan, mi nec tempor convallis, felis nulla."
+                        "Garij transformed our entire fleet maintenance workflow. The live status tracker kept us updated every step of the way, and their engine overhaul brought our commercial vehicles back to peak performance."
                     </p>
                     <div class="testimonial-author-box">
-                        <div class="testimonial-author-name">BILL ALVARADO</div>
-                        <div class="testimonial-author-role">Manager</div>
+                        <div class="testimonial-author-name">RAHIM</div>
+                        <div class="testimonial-author-role">Fleet Director</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Testimonial 2: Alberta Wilson -->
+            <!-- Testimonial 2: Karim -->
             <div class="col-lg-4 col-md-6 reveal">
                 <div class="testimonial-card">
                     <div class="testimonial-quote-icon">
                         <i class="bi bi-quote"></i>
                     </div>
                     <p class="testimonial-quote-text">
-                        "Etiam et pellentesque dui. Ut a sagittis est. Maecenas cursus massa nulla, sed finibus dolor rutrum ut. Nam luctus leo pharetra enim faucibus finibus."
+                        "Found Garij through a friend when my car had persistent suspension and transmission issues. Their diagnostic precision and transparency are unmatched. Fair pricing, genuine parts, and fast turnaround."
                     </p>
                     <div class="testimonial-author-box">
-                        <div class="testimonial-author-name">ALBERTA WILSON</div>
-                        <div class="testimonial-author-role">Businessman</div>
+                        <div class="testimonial-author-name">KARIM</div>
+                        <div class="testimonial-author-role">Automotive Enthusiast</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Testimonial 3: Zachary Fernandez -->
+            <!-- Testimonial 3: Rahman -->
             <div class="col-lg-4 col-md-6 reveal-right">
                 <div class="testimonial-card">
                     <div class="testimonial-quote-icon">
                         <i class="bi bi-quote"></i>
                     </div>
                     <p class="testimonial-quote-text">
-                        "Nam fringilla magna at ipsum pharetra, et lobortis ante finibus. Morbi eu quam ante. Mauris mollis venenatis tortor non luctus. Curabitur dignissim."
+                        "Exceptional service from the Tejgaon workshop team. The ECU performance tuning and complete brake restoration gave my vehicle new life. Clean facility, highly skilled mechanics, and total professionalism."
                     </p>
                     <div class="testimonial-author-box">
-                        <div class="testimonial-author-name">ZACHARY FERNANDEZ</div>
-                        <div class="testimonial-author-role">Teacher</div>
+                        <div class="testimonial-author-name">RAHMAN</div>
+                        <div class="testimonial-author-role">Corporate Executive</div>
                     </div>
                 </div>
             </div>
