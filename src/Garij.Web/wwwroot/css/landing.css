@@ -2249,6 +2249,12 @@ body.landing-page-body {
     color: #0f172a !important;
 }
 
+[data-theme="light"] .quick-lookup-input::placeholder {
+    color: #475569 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #475569 !important;
+}
+
 [data-theme="light"] .quick-lookup-input:focus {
     background: #ffffff !important;
     border-color: #0284c7 !important;
@@ -2527,5 +2533,16 @@ body.landing-page-body {
     color: #0f172a !important;
     border-color: #0284c7 !important;
     box-shadow: 0 0 0 0.2rem rgba(2, 132, 199, 0.15) !important;
+}
+
+/* 10. Placeholder Text Contrast in Light Mode */
+[data-theme="light"] ::placeholder,
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder,
+[data-theme="light"] .form-control::placeholder,
+[data-theme="light"] .form-control.bg-dark::placeholder {
+    color: #475569 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #475569 !important;
 }
 
