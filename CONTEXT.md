@@ -73,6 +73,19 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-09-07] - One-Time Payment & Lifetime Project License System (Rakibul Islam Emon)
+- **One-Time Buyout & License Model**: Implemented a complete software license purchase and activation system allowing garage owners to buy the project once ($499.00 USD, zero recurring subscriptions) to unlock full access to use the platform.
+- **Domain Layer (`Garij.Domain`)**: Added `ProjectPurchase.cs` entity and `LicenseStatus.cs` enum tracking cryptographically unique license keys (`GRJ-LIC-XXXX-XXXX-XXXX`), buyer details, transaction references, amount, and active states.
+- **Infrastructure Layer (`Garij.Infrastructure`)**: Added `ProjectPurchaseConfiguration`, `DbSet<ProjectPurchase>` to `GarijDbContext`, `IProjectPurchaseRepository`, and `ProjectPurchaseRepository`. Updated `DbSeeder.cs` to seed default lifetime licenses for default demo workshop accounts (`admin@garij.com`, `frontdesk@garij.com`, `mechanic@garij.com`) and a reusable demo activation key `GRJ-DEMO-2026-KEY`.
+- **Application Layer (`Garij.Application`)**: Added `LicenseSettings.cs` (options pattern), DTOs (`ProjectPurchaseDto`, `CreateProjectPurchaseDto`, `PurchaseResultDto`), `IProjectPurchaseService`, and `ProjectPurchaseService` handling payment validation, cryptographic key generation, user licensing checks, and key activation.
+- **Presentation & Web Layer (`Garij.Web`)**:
+  - `PurchaseController`: Implemented `Index` (pricing & checkout), `Checkout` (payment submission & auto-registration), `Success` (order receipt & digital license certificate), `Status` (license overview), and `Activate` (direct key redemption).
+  - `RequireProjectLicenseAttribute`: Global action filter protecting internal workshop features (`Dashboard`, `Customer`, `Vehicle`, `ServiceJob`, `Mechanic`, `Parts`, `Billing`, `Report`), redirecting unlicensed users to `/Purchase` while allowing public pages (`/`, `/About`, `/Services`, `/Testimonials`, `/Pricing`, `/Account/*`, `/Purchase/*`).
+  - Dedicated Public Views: Created dedicated responsive pages `Views/Home/About.cshtml`, `Views/Home/Services.cshtml`, `Views/Home/Testimonials.cshtml`, and `Views/Home/Pricing.cshtml` so public presentation sections remain completely open and accessible to all users whether logged out or logged in without a license.
+  - Locked Dashboard Indicators: In `_LandingLayout.cshtml` and `_Layout.cshtml`, unlicensed logged-in users are presented with a clear `Dashboard (Locked)` badge and guidance directing them to the purchase page, while public presentation navigation links remain fully accessible.
+  - Enhanced Checkout & Landing UI: Added instant 1-click test approval and demo key autofill to `Views/Purchase/Index.cshtml`, plus fixed anchor scroll margins in `landing.css` and hash auto-scroll handling in `landing.js`.
+- **Testing & Verification**: Created `ProjectPurchaseServiceTests` (6 unit tests) and `ProjectPurchaseIntegrationTests` (12 integration tests covering anonymous and unlicensed authenticated public access). Solution tests passing at 100% (70/70 tests passing cleanly).
+
 ### [2026-08-29] - Landing Page UI Redesign & High-Tech Automotive Overhaul (Aftab Ahmed Fahim)
 - **Public Landing Page (HomeController & _LandingLayout)**: Created `HomeController` (`[AllowAnonymous]`) mapped to the default route `/`, with dedicated full-bleed dark automotive layout `_LandingLayout.cshtml` and view `Views/Home/Index.cshtml`.
 - **Visual Design & Aesthetics (Demo Mockup Alignment)**:
