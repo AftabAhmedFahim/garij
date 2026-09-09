@@ -102,6 +102,14 @@ else
                 _ => ""
             };
 
+            // Stages are not mandatory: a mechanic may jump straight to any later
+            // stage (including Completed) instead of stepping through each one.
+            var pipeline = StatusLookupViewModel.TimelineStatuses;
+            var currentStage = pipeline.ToList().IndexOf(job.Status);
+            var skipAheadStatuses = currentStage < 0
+                ? new List<JobStatus>()
+                : pipeline.Skip(currentStage + 2).ToList();
+
             <div class="col-12 col-md-6 col-xl-4">
                 <div class="app-card h-100 d-flex flex-column @(isCompleted ? "opacity-75" : "")">
                     <!-- Card Header -->
@@ -180,6 +188,26 @@ else
                                             title="@(nextStatus == JobStatus.Completed ? "Ensure parts used are logged before marking completed" : "")">
                                         <i class="bi bi-arrow-right-circle-fill"></i>
                                         <span>@nextStatusLabel</span>
+                                    </button>
+                                </form>
+                            }
+
+                            @if (!isCompleted && !isCancelled && skipAheadStatuses.Any())
+                            {
+                                <form method="post" asp-controller="Mechanic" asp-action="UpdateStatus" class="w-100 d-flex gap-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="serviceJobId" value="@job.Id" />
+                                    <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                    <label class="visually-hidden" for="skipTo-@job.Id">Skip ahead to a later stage</label>
+                                    <select id="skipTo-@job.Id" name="newStatus" class="app-form-select app-form-select-sm flex-fill"
+                                            title="Stages are optional - jump straight to a later stage">
+                                        @foreach (var status in skipAheadStatuses)
+                                        {
+                                            <option value="@status">Skip to @StatusBadgeHelper.DisplayName(status)</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="app-btn app-btn-outline app-btn-sm flex-shrink-0" title="Skip ahead to the selected stage">
+                                        <i class="bi bi-skip-forward-fill"></i>
                                     </button>
                                 </form>
                             }
