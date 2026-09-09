@@ -3,6 +3,7 @@ using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
 using Garij.Domain.Exceptions;
 using Garij.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Garij.Application.Services;
 
@@ -61,9 +62,10 @@ public class PartsInventoryService : IPartsInventoryService
         entity.PartNumber = part.PartNumber;
         entity.UnitPrice = part.UnitPrice;
         entity.ReorderLevel = part.ReorderLevel;
+        entity.RowVersion = Guid.NewGuid();
 
         _partRepository.Update(entity);
-        await _partRepository.SaveChangesAsync();
+        await SaveOrThrowOnConflictAsync(_partRepository, entity);
 
         return ToDto(entity);
     }
@@ -89,8 +91,9 @@ public class PartsInventoryService : IPartsInventoryService
         }
 
         entity.QuantityInStock = newQuantity;
+        entity.RowVersion = Guid.NewGuid();
         _partRepository.Update(entity);
-        await _partRepository.SaveChangesAsync();
+        await SaveOrThrowOnConflictAsync(_partRepository, entity);
     }
 
     public async Task<IEnumerable<PartDto>> GetLowStockPartsAsync()
@@ -101,6 +104,13 @@ public class PartsInventoryService : IPartsInventoryService
 
     public async Task<JobPartUsedDto> RecordPartUsageAsync(JobPartUsedDto jobPartUsed)
     {
+        // Guarded here and not only in the controller: a negative quantity would flip the
+        // decrement below into an increment and silently manufacture stock.
+        if (jobPartUsed.QuantityUsed <= 0)
+        {
+            throw new ValidationException(nameof(JobPartUsedDto.QuantityUsed), "Quantity used must be at least 1.");
+        }
+
         var part = await _partRepository.GetByIdAsync(jobPartUsed.PartId)
             ?? throw new NotFoundException(nameof(Part), jobPartUsed.PartId);
 
@@ -111,6 +121,7 @@ public class PartsInventoryService : IPartsInventoryService
         }
 
         part.QuantityInStock = newQuantity;
+        part.RowVersion = Guid.NewGuid();
         _partRepository.Update(part);
 
         var entity = new JobPartUsed
@@ -122,11 +133,34 @@ public class PartsInventoryService : IPartsInventoryService
         };
 
         await _jobPartUsedRepository.AddAsync(entity);
-        await _jobPartUsedRepository.SaveChangesAsync();
+
+        // Both repositories share the request-scoped DbContext, so this single save commits
+        // the stock decrement and the usage line together, or neither of them.
+        await SaveOrThrowOnConflictAsync(_jobPartUsedRepository, part);
 
         jobPartUsed.Id = entity.Id;
         jobPartUsed.PriceAtUsage = entity.PriceAtUsage;
         return jobPartUsed;
+    }
+
+    /// <summary>
+    /// Commits pending changes and converts an optimistic-concurrency failure into a
+    /// business rule violation the UI can present. A conflict means another user changed
+    /// this part's stock between our read and our write, so our arithmetic was based on a
+    /// stale quantity and the write must be rejected rather than applied (BR-017).
+    /// </summary>
+    private static async Task SaveOrThrowOnConflictAsync<T>(IRepository<T> repository, Part part) where T : class
+    {
+        try
+        {
+            await repository.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new BusinessRuleException(
+                "BR-017",
+                $"Stock for part '{part.Name}' was changed by someone else while this operation was in progress. Reload the part and try again.");
+        }
     }
 
     private static PartDto ToDto(Part part) => new()

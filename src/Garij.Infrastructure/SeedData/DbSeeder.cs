@@ -181,6 +181,10 @@ public static class DbSeeder
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded initial Stock Parts.");
             }
+
+            // 5. Seed the presentation dataset. Runs last because it draws on the service
+            // catalog and the parts seeded above.
+            await DemoDataSeeder.SeedAsync(context, userManager, logger);
         }
         catch (Exception ex)
         {
