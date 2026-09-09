@@ -3,6 +3,7 @@ using System;
 using Garij.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garij.Infrastructure.Migrations
 {
     [DbContext(typeof(GarijDbContext))]
-    partial class GarijDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260909141333_AddProjectPurchases")]
+    partial class AddProjectPurchases
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -257,10 +260,6 @@ namespace Garij.Infrastructure.Migrations
 
                     b.Property<int>("ReorderLevel")
                         .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("TEXT");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");

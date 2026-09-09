@@ -14,6 +14,10 @@ public class PartConfiguration : IEntityTypeConfiguration<Part>
         builder.Property(p => p.PartNumber).IsRequired().HasMaxLength(50);
         builder.Property(p => p.UnitPrice).HasColumnType("decimal(18,2)");
 
+        // Included in the WHERE clause of every UPDATE, so a stale writer affects 0 rows
+        // and EF Core raises DbUpdateConcurrencyException instead of losing the update.
+        builder.Property(p => p.RowVersion).IsConcurrencyToken();
+
         builder.ToTable(t => t.HasCheckConstraint("CK_Part_QuantityInStock", "\"QuantityInStock\" >= 0"));
 
         builder.HasMany(p => p.JobPartsUsed)
