@@ -104,6 +104,13 @@ public class PartsInventoryService : IPartsInventoryService
 
     public async Task<JobPartUsedDto> RecordPartUsageAsync(JobPartUsedDto jobPartUsed)
     {
+        // Guarded here and not only in the controller: a negative quantity would flip the
+        // decrement below into an increment and silently manufacture stock.
+        if (jobPartUsed.QuantityUsed <= 0)
+        {
+            throw new ValidationException(nameof(JobPartUsedDto.QuantityUsed), "Quantity used must be at least 1.");
+        }
+
         var part = await _partRepository.GetByIdAsync(jobPartUsed.PartId)
             ?? throw new NotFoundException(nameof(Part), jobPartUsed.PartId);
 

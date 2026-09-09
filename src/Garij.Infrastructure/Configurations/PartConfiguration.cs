@@ -18,7 +18,15 @@ public class PartConfiguration : IEntityTypeConfiguration<Part>
         // and EF Core raises DbUpdateConcurrencyException instead of losing the update.
         builder.Property(p => p.RowVersion).IsConcurrencyToken();
 
-        builder.ToTable(t => t.HasCheckConstraint("CK_Part_QuantityInStock", "\"QuantityInStock\" >= 0"));
+        // Second line of defence behind the service-layer checks: even a direct SQL write
+        // or a code path that forgets to validate cannot leave the inventory in a state
+        // the domain considers impossible.
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Part_QuantityInStock", "\"QuantityInStock\" >= 0");
+            t.HasCheckConstraint("CK_Part_UnitPrice", "\"UnitPrice\" >= 0");
+            t.HasCheckConstraint("CK_Part_ReorderLevel", "\"ReorderLevel\" >= 0");
+        });
 
         builder.HasMany(p => p.JobPartsUsed)
             .WithOne(jpu => jpu.Part)
