@@ -45,8 +45,11 @@
                     <span asp-validation-for="BookingReference" class="app-field-error"></span>
                 </div>
 
+                @await Html.PartialAsync("_IntakeAssistantPartial")
+
                 <div class="app-form-group">
                     <label asp-for="DiagnosticNotes" class="app-form-label">Diagnostic / Customer Notes</label>
+
                     <textarea asp-for="DiagnosticNotes" class="app-form-control" rows="4" placeholder="Describe customer requests or initial diagnostic observations..."></textarea>
                     <span asp-validation-for="DiagnosticNotes" class="app-field-error"></span>
                 </div>
