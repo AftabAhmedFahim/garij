@@ -41,10 +41,7 @@ public class ServiceJobController : Controller
     {
         var jobs = await _serviceJobService.GetFilteredServiceJobsAsync(status, mechanicId, sortBy, search);
 
-        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
-        var currentStaff = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == currentUserId || (currentUserEmail != null && s.Email == currentUserEmail));
-        var currentGarageId = currentStaff?.GarageId ?? "default-garij-master";
+        var currentGarageId = GetCurrentGarageId();
 
         var mechanics = _context.StaffUsers
             .Where(u => u.Role == UserRole.Mechanic && (u.GarageId ?? "default-garij-master") == currentGarageId)
@@ -186,14 +183,25 @@ public class ServiceJobController : Controller
         }
     }
 
+    private string GetCurrentGarageId()
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+        var currentStaff = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == currentUserId || (currentUserEmail != null && s.Email == currentUserEmail));
+        return currentStaff?.GarageId ?? "default-garij-master";
+    }
+
     private async Task PopulateVehiclesDropDownList(object? selectedVehicle = null)
     {
+        var currentGarageId = GetCurrentGarageId();
         var vehicles = await _vehicleRepository.GetAllWithCustomersAsync();
-        var vehicleList = vehicles.Select(v => new
-        {
-            v.Id,
-            DisplayText = $"{v.LicensePlateNumber} - {v.Year} {v.Make} {v.Model} (Owner: {v.Customer?.FullName ?? "Unknown"})"
-        }).OrderBy(v => v.DisplayText);
+        var vehicleList = vehicles
+            .Where(v => (v.GarageId ?? "default-garij-master") == currentGarageId)
+            .Select(v => new
+            {
+                v.Id,
+                DisplayText = $"{v.LicensePlateNumber} - {v.Year} {v.Make} {v.Model} (Owner: {v.Customer?.FullName ?? "Unknown"})"
+            }).OrderBy(v => v.DisplayText);
 
         ViewBag.Vehicles = new SelectList(vehicleList, "Id", "DisplayText", selectedVehicle);
     }
