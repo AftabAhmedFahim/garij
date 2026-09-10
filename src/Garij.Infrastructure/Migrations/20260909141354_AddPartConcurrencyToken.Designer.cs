@@ -3,6 +3,7 @@ using System;
 using Garij.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Garij.Infrastructure.Migrations
 {
     [DbContext(typeof(GarijDbContext))]
-    partial class GarijDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260909141354_AddPartConcurrencyToken")]
+    partial class AddPartConcurrencyToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -122,14 +125,7 @@ namespace Garij.Infrastructure.Migrations
                     b.HasIndex("ServiceJobId")
                         .IsUnique();
 
-                    b.ToTable("Invoices", t =>
-                        {
-                            t.HasCheckConstraint("CK_Invoice_SubTotal", "\"SubTotal\" >= 0");
-
-                            t.HasCheckConstraint("CK_Invoice_TaxAmount", "\"TaxAmount\" >= 0");
-
-                            t.HasCheckConstraint("CK_Invoice_TotalAmount", "\"TotalAmount\" >= 0");
-                        });
+                    b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("Garij.Domain.Entities.JobPartUsed", b =>
@@ -156,12 +152,7 @@ namespace Garij.Infrastructure.Migrations
 
                     b.HasIndex("ServiceJobId");
 
-                    b.ToTable("JobPartsUsed", t =>
-                        {
-                            t.HasCheckConstraint("CK_JobPartUsed_PriceAtUsage", "\"PriceAtUsage\" >= 0");
-
-                            t.HasCheckConstraint("CK_JobPartUsed_QuantityUsed", "\"QuantityUsed\" > 0");
-                        });
+                    b.ToTable("JobPartsUsed");
                 });
 
             modelBuilder.Entity("Garij.Domain.Entities.JobServiceDetail", b =>
@@ -188,12 +179,7 @@ namespace Garij.Infrastructure.Migrations
 
                     b.HasIndex("ServiceJobId");
 
-                    b.ToTable("JobServiceDetails", t =>
-                        {
-                            t.HasCheckConstraint("CK_JobServiceDetail_PriceAtBooking", "\"PriceAtBooking\" >= 0");
-
-                            t.HasCheckConstraint("CK_JobServiceDetail_Quantity", "\"Quantity\" > 0");
-                        });
+                    b.ToTable("JobServiceDetails");
                 });
 
             modelBuilder.Entity("Garij.Domain.Entities.MechanicAssignment", b =>
@@ -287,10 +273,6 @@ namespace Garij.Infrastructure.Migrations
                     b.ToTable("Parts", t =>
                         {
                             t.HasCheckConstraint("CK_Part_QuantityInStock", "\"QuantityInStock\" >= 0");
-
-                            t.HasCheckConstraint("CK_Part_ReorderLevel", "\"ReorderLevel\" >= 0");
-
-                            t.HasCheckConstraint("CK_Part_UnitPrice", "\"UnitPrice\" >= 0");
                         });
                 });
 
@@ -321,10 +303,7 @@ namespace Garij.Infrastructure.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("PaymentTransactions", t =>
-                        {
-                            t.HasCheckConstraint("CK_PaymentTransaction_Amount", "\"Amount\" > 0");
-                        });
+                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("Garij.Domain.Entities.ProjectPurchase", b =>
@@ -423,12 +402,7 @@ namespace Garij.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServiceCatalogs", t =>
-                        {
-                            t.HasCheckConstraint("CK_ServiceCatalog_BasePrice", "\"BasePrice\" >= 0");
-
-                            t.HasCheckConstraint("CK_ServiceCatalog_EstimatedDurationMinutes", "\"EstimatedDurationMinutes\" > 0");
-                        });
+                    b.ToTable("ServiceCatalogs");
                 });
 
             modelBuilder.Entity("Garij.Domain.Entities.ServiceJob", b =>
@@ -558,10 +532,7 @@ namespace Garij.Infrastructure.Migrations
                     b.HasIndex("LicensePlateNumber")
                         .IsUnique();
 
-                    b.ToTable("Vehicles", t =>
-                        {
-                            t.HasCheckConstraint("CK_Vehicle_Year", "\"Year\" BETWEEN 1900 AND 2100");
-                        });
+                    b.ToTable("Vehicles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

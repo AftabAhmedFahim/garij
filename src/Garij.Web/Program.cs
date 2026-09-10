@@ -13,6 +13,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.Configure<BillingSettings>(builder.Configuration.GetSection(BillingSettings.SectionName));
 builder.Services.Configure<LicenseSettings>(builder.Configuration.GetSection(LicenseSettings.SectionName));
+builder.Services.Configure<Garij.Infrastructure.ExternalServices.Gemini.GeminiSettings>(builder.Configuration.GetSection(Garij.Infrastructure.ExternalServices.Gemini.GeminiSettings.SectionName));
+builder.Services.AddHttpClient<Garij.Infrastructure.ExternalServices.Gemini.ILlmClient, Garij.Infrastructure.ExternalServices.Gemini.GeminiClient>(client => { client.Timeout = TimeSpan.FromSeconds(30); });
+
+
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     {

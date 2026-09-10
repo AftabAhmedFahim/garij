@@ -1,5 +1,6 @@
 @model StatusLookupViewModel
 @using Garij.Domain.Enums
+@using Garij.Web.Helpers
 @{
     Layout = "_LandingLayout";
     ViewData["Title"] = "Creative & Professional Mechanic Services";
@@ -10,16 +11,6 @@
     var currentIndex = currentJob is null ? -1 : statusOrder.ToList().IndexOf(currentJob.Status);
     var isCancelled = currentJob?.Status == JobStatus.Cancelled;
 
-    string BadgeClass(JobStatus status) => status switch
-    {
-        JobStatus.Requested => "bg-warning text-dark",
-        JobStatus.InspectionPending => "bg-info text-dark",
-        JobStatus.CustomerApprovalNeeded => "bg-secondary text-white",
-        JobStatus.InProgress => "bg-primary text-white",
-        JobStatus.Completed => "bg-success text-white",
-        JobStatus.Cancelled => "bg-danger text-white",
-        _ => "bg-secondary text-white"
-    };
 }
 
 <!-- ==========================================================================
@@ -207,19 +198,25 @@
                     </p>
                 </div>
                 <div class="col-lg-7">
-                    <form asp-controller="Home" asp-action="Index" method="get">
+                    <form asp-controller="Home" asp-action="Index" method="get" data-lookup-form novalidate>
+                        <label for="statusLookupQuery" class="visually-hidden">Booking reference or license plate</label>
                         <div class="quick-lookup-input-group">
                             <input type="text"
+                                   id="statusLookupQuery"
                                    name="query"
                                    value="@Model?.Query"
                                    class="form-control quick-lookup-input"
                                    placeholder="GRJ-2026-0001 or DHA-2026..."
+                                   aria-describedby="statusLookupHelp statusLookupError"
+                                   autocomplete="off"
                                    required />
-                            <button type="submit" class="btn-quick-lookup-submit">
+                            <button type="submit" class="btn-quick-lookup-submit" data-lookup-submit>
                                 <i class="bi bi-search"></i>
-                                <span>Track Status</span>
+                                <span data-lookup-submit-text>Track Status</span>
                             </button>
                         </div>
+                        <p id="statusLookupHelp" class="quick-lookup-help mb-0">You can use either identifier; no account is required.</p>
+                        <p id="statusLookupError" class="quick-lookup-error mb-0" role="alert" hidden></p>
                     </form>
                 </div>
             </div>
@@ -227,11 +224,11 @@
             <!-- Search Results Display (Rendered In-Place) -->
             @if (Model?.WasSearched == true)
             {
-                <div class="tracker-result-shell reveal">
+                <div class="tracker-result-shell reveal" aria-live="polite" aria-atomic="true" tabindex="-1">
                     @if (!string.IsNullOrWhiteSpace(Model.Message))
                     {
                         <!-- Not Found Warning Card -->
-                        <div class="p-4 rounded-3 border border-warning border-opacity-50 text-warning d-flex align-items-center gap-3" style="background: rgba(234, 179, 8, 0.1);">
+                        <div class="tracker-lookup-message tracker-lookup-message-warning">
                             <i class="bi bi-exclamation-triangle-fill fs-2"></i>
                             <div>
                                 <h5 class="fw-bold mb-1">No Booking or Vehicle Found</h5>
@@ -252,8 +249,8 @@
                             @if (currentJob is not null)
                             {
                                 <div class="text-end">
-                                    <span class="badge @BadgeClass(currentJob.Status) fs-6 px-3 py-2 rounded-pill shadow">
-                                        @currentJob.Status
+                                    <span class="app-badge @StatusBadgeHelper.BadgeClass(currentJob.Status) tracker-status-badge">
+                                        @StatusBadgeHelper.DisplayName(currentJob.Status)
                                     </span>
                                 </div>
                             }
@@ -298,7 +295,7 @@
 
                                         <li class="tracker-timeline-item @itemClass">
                                             <div class="tracker-timeline-dot"></div>
-                                            <div class="tracker-timeline-name">@status</div>
+                                            <div class="tracker-timeline-name">@StatusBadgeHelper.DisplayName(status)</div>
                                             <div class="tracker-timeline-sub">
                                                 @(isStepCompleted ? "Completed" : isStepCurrent ? "In Progress" : "Pending")
                                             </div>
@@ -336,7 +333,7 @@
                                                 <div class="text-muted small mt-1">@history.JobType &bull; @history.VehicleDescription</div>
                                             </div>
                                             <div class="text-end">
-                                                <span class="badge @BadgeClass(history.Status) rounded-pill mb-1">@history.Status</span>
+                                                <span class="app-badge @StatusBadgeHelper.BadgeClass(history.Status)">@StatusBadgeHelper.DisplayName(history.Status)</span>
                                                 <div class="text-secondary small">@history.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</div>
                                             </div>
                                         </div>

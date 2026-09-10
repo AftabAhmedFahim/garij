@@ -88,6 +88,24 @@
   - Authored comprehensive integration test suite `ServiceJobStatusTransitionIntegrationTests.cs` covering legal workflow advancement (`Requested` -> `InspectionPending` -> `CustomerApprovalNeeded` -> `InProgress` -> `Completed`), valid cancellations, terminal state locks, illegal state transitions (BR-007 rejections), job board filtering/sorting, and maintenance prediction forecasting.
   - 107/107 solution tests passing (100% pass rate).
 
+### [2026-09-09] - Smart Intake Gemini AI Assistant & Executive Business Reports (Aftab Ahmed Fahim) - Issue #31
+- **Executive Business Reports (FR-14, FR-15, FR-17)**:
+  - **Monthly Revenue Report**: Implemented side-by-side comparison of accrual-basis Billed revenue (Net SubTotal and Gross TotalAmount excluding Refunded invoices) vs cash-basis Collected payments (`PaymentTransaction`), monthly aggregations, invoice count, and average ticket size.
+  - **Part Consumption Report**: Ranked inventory usage spend by total cost (`QuantityUsed * PriceAtUsage`), anchored to job completion dates (with explicit UI disclosure of the date basis), and flagged low-stock items (`QuantityInStock <= ReorderLevel`).
+  - **Mechanic Workload Report**: Aggregated ticket volumes (Active vs Completed) per mechanic broken down by `RoleInJob` (`Lead` vs `Assistant`), along with each technician's percentage share of completed shop jobs (with explicit UI disclosure that workload is measured in ticket volume).
+  - **Reporting UI**: Implemented reusable date-range filter partial `_DateRangeFilterPartial.cshtml` with quick presets, Chart.js visual charts, summary cards, and clean `@media print` printability across all report views (`Revenue.cshtml`, `PartConsumption.cshtml`, `MechanicWorkload.cshtml`, `Index.cshtml`).
+- **Gemini Smart Intake Assistant (FR-18, FR-20, FR-21)**:
+  - **LLM Grounding & Server-Side JSON Schema**: Implemented `ILlmClient` and `GeminiClient` targeting native endpoint with server-side `responseSchema` and `x-goog-api-key` header (avoiding URL logging leakage). Grounded prompts on unfiltered database `ServiceCatalog` entries.
+  - **Safety Gate & Audit Logging**: Validates every recommended `serviceCatalogId` against the database catalog, discards hallucinated/unverified IDs with UI warning counts, and logs every request/response into `AiRequestLogs` table with latency tracking.
+  - **Advisory-Only Intake Integration**: Created `_IntakeAssistantPartial.cshtml` embedded into `Views/ServiceJob/Create.cshtml` (one permitted line). Confirmed suggestions are formatted and appended directly into `DiagnosticNotes` on the client side; never writes unconfirmed records to the database.
+- **Decisions**:
+  - Revenue reporting basis: collected revenue is an unfiltered cash intake ledger; billed revenue excludes currently-Refunded invoices; refunds shown as a separate KPI in neither total. Refunds have no timestamp, so revenue figures are point-in-time, not historically immutable.
+  - Garij.Application references Garij.Infrastructure, inverting the intended dependency direction. Pre-existing baseline debt, not introduced here. Flagged so nobody builds on the assumption that Application is infrastructure-free.
+- **Testing & Invariant Verification**:
+  - Added unit test suites `ReportingServiceTests.cs` (revenue side-by-side, refunded exclusions, part consumption date fallbacks, mechanic workload shares, empty ranges) and `IntakeAssistantTests.cs` (hallucination discarding safety gate, missing API key graceful degradation).
+  - 100% solution test pass rate (88/88 tests passing: 46 unit / 8 general / 34 integration).
+  - Verified zero schema changes: no migrations were added and no entity, EF configuration or DbSet was modified; `has-pending-model-changes` still reports pending changes from Emon's unmigrated ProjectPurchase, unchanged from before this work.
+
 ### [2026-09-08] - Light Mode & Dark Mode System with Image-Free Minimalist Light Aesthetic (Rakibul Islam Emon)
 - **Light & Dark Theme Engine**:
   - Implemented client-side instant theme switching engine with `theme-toggle.js`, persisting preference in `localStorage.getItem("garij_theme")` (`dark` or `light`).

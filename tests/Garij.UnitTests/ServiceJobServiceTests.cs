@@ -160,7 +160,7 @@ public class ServiceJobServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateServiceJobStatusAsync_ThrowsBusinessRuleException_OnInvalidTransition()
+    public async Task UpdateServiceJobStatusAsync_ThrowsBusinessRuleException_WhenMovingBackwards()
     {
         // Arrange
         var customer = new Customer { FullName = "Test", Email = "invalid@test.com", PhoneNumber = "123", Address = "Test" };
@@ -172,12 +172,59 @@ public class ServiceJobServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         var job = await _serviceJobService.CreateServiceJobAsync(new ServiceJobDto { VehicleId = vehicle.Id, JobType = JobType.RoutineService });
+        await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.InProgress);
 
-        // Act & Assert: Direct Requested -> InProgress is illegal
+        // Act & Assert: stages may be skipped going forward, but never re-entered.
         var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.InProgress));
+            _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.InspectionPending));
 
         Assert.Equal("BR-007", ex.RuleCode);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.CustomerApprovalNeeded)]
+    [InlineData(JobStatus.InProgress)]
+    [InlineData(JobStatus.Completed)]
+    public async Task UpdateServiceJobStatusAsync_AllowsSkippingStages(JobStatus target)
+    {
+        // Arrange
+        var customer = new Customer { FullName = "Test", Email = $"skip-{target}@test.com", PhoneNumber = "123", Address = "Test" };
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        var vehicle = new Vehicle { CustomerId = customer.Id, LicensePlateNumber = $"SKIP-{(int)target}", Make = "Honda", Model = "Fit", Year = 2019, Vin = $"VINSKIP{(int)target}", Color = "Blue" };
+        _context.Vehicles.Add(vehicle);
+        await _context.SaveChangesAsync();
+
+        var job = await _serviceJobService.CreateServiceJobAsync(new ServiceJobDto { VehicleId = vehicle.Id, JobType = JobType.RoutineService });
+
+        // Act: jump straight from Requested to a later stage, skipping the ones between.
+        var updated = await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, target);
+
+        // Assert
+        Assert.Equal(target, updated.Status);
+    }
+
+    [Fact]
+    public async Task UpdateServiceJobStatusAsync_StampsCompletedAt_WhenSkippingStraightToCompleted()
+    {
+        // Arrange
+        var customer = new Customer { FullName = "Test", Email = "straight-to-done@test.com", PhoneNumber = "123", Address = "Test" };
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        var vehicle = new Vehicle { CustomerId = customer.Id, LicensePlateNumber = "DHA-9090", Make = "Honda", Model = "Fit", Year = 2019, Vin = "VIN909", Color = "Blue" };
+        _context.Vehicles.Add(vehicle);
+        await _context.SaveChangesAsync();
+
+        var job = await _serviceJobService.CreateServiceJobAsync(new ServiceJobDto { VehicleId = vehicle.Id, JobType = JobType.RoutineService });
+
+        // Act
+        var updated = await _serviceJobService.UpdateServiceJobStatusAsync(job.Id, JobStatus.Completed);
+
+        // Assert
+        Assert.Equal(JobStatus.Completed, updated.Status);
+        Assert.NotNull(updated.CompletedAt);
     }
 
     [Fact]

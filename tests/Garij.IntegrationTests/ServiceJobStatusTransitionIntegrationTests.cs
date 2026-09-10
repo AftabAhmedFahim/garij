@@ -192,14 +192,50 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
     }
 
     [Theory]
-    // Illegal forward jumps (skipping required workflow steps)
     [InlineData(JobStatus.Requested, JobStatus.CustomerApprovalNeeded)]
     [InlineData(JobStatus.Requested, JobStatus.InProgress)]
     [InlineData(JobStatus.Requested, JobStatus.Completed)]
     [InlineData(JobStatus.InspectionPending, JobStatus.InProgress)]
     [InlineData(JobStatus.InspectionPending, JobStatus.Completed)]
     [InlineData(JobStatus.CustomerApprovalNeeded, JobStatus.Completed)]
-    // Illegal backwards transitions
+    public async Task StatusStateMachine_CanSkipAheadToLaterStages_AdvancesSuccessfully(
+        JobStatus currentStatus, JobStatus forwardTargetStatus)
+    {
+        // Arrange
+        await using var context = new GarijDbContext(_options);
+        var (service, _) = CreateServiceJobService(context);
+        var (_, vehicleId, _) = await SeedBasicEntitiesAsync(context);
+
+        var created = await service.CreateServiceJobAsync(new ServiceJobDto
+        {
+            VehicleId = vehicleId,
+            JobType = JobType.RoutineService,
+            Status = JobStatus.Requested
+        });
+
+        // Advance to currentStatus
+        if (currentStatus == JobStatus.InspectionPending)
+        {
+            await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InspectionPending);
+        }
+        else if (currentStatus == JobStatus.CustomerApprovalNeeded)
+        {
+            await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.CustomerApprovalNeeded);
+        }
+
+        // Act
+        var result = await service.UpdateServiceJobStatusAsync(created.Id, forwardTargetStatus);
+
+        // Assert
+        Assert.Equal(forwardTargetStatus, result.Status);
+
+        var persisted = await context.ServiceJobs.FindAsync(created.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal(forwardTargetStatus, persisted.Status);
+    }
+
+    [Theory]
+    // Illegal backwards transitions (cannot move backward in pipeline)
     [InlineData(JobStatus.InspectionPending, JobStatus.Requested)]
     [InlineData(JobStatus.CustomerApprovalNeeded, JobStatus.Requested)]
     [InlineData(JobStatus.CustomerApprovalNeeded, JobStatus.InspectionPending)]
@@ -228,13 +264,10 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
         }
         else if (currentStatus == JobStatus.CustomerApprovalNeeded)
         {
-            await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InspectionPending);
             await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.CustomerApprovalNeeded);
         }
         else if (currentStatus == JobStatus.InProgress)
         {
-            await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InspectionPending);
-            await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.CustomerApprovalNeeded);
             await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InProgress);
         }
 
@@ -417,9 +450,7 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
     {
         // Arrange
         await using var context = new GarijDbContext(_options);
-        var vehicleRepo = new VehicleRepository(context);
-        var jobRepo = new ServiceJobRepository(context);
-        var intelligenceService = new IntelligenceService(vehicleRepo, jobRepo);
+        var intelligenceService = new IntelligenceService(context);
 
         var customer = new Customer
         {

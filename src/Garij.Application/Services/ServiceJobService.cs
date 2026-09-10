@@ -310,6 +310,22 @@ public class ServiceJobService : IServiceJobService
         return MapToDto(entity);
     }
 
+    /// <summary>
+    /// The order a job advances through. Stages may be skipped - a mechanic who
+    /// finishes the work outright can move a job straight to Completed without
+    /// stepping through inspection and approval - but a job never moves back to
+    /// an earlier stage. Cancelled sits outside this pipeline and is reachable
+    /// from any stage that is not already terminal.
+    /// </summary>
+    private static readonly JobStatus[] StatusPipeline =
+    [
+        JobStatus.Requested,
+        JobStatus.InspectionPending,
+        JobStatus.CustomerApprovalNeeded,
+        JobStatus.InProgress,
+        JobStatus.Completed
+    ];
+
     private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)
     {
         if (currentStatus == newStatus)
@@ -332,18 +348,12 @@ public class ServiceJobService : IServiceJobService
             return;
         }
 
-        bool isValid = (currentStatus, newStatus) switch
-        {
-            (JobStatus.Requested, JobStatus.InspectionPending) => true,
-            (JobStatus.InspectionPending, JobStatus.CustomerApprovalNeeded) => true,
-            (JobStatus.CustomerApprovalNeeded, JobStatus.InProgress) => true,
-            (JobStatus.InProgress, JobStatus.Completed) => true,
-            _ => false
-        };
+        var currentStage = Array.IndexOf(StatusPipeline, currentStatus);
+        var newStage = Array.IndexOf(StatusPipeline, newStatus);
 
-        if (!isValid)
+        if (newStage <= currentStage)
         {
-            throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. Status must follow: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed.");
+            throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. A job moves forward through: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed. Stages may be skipped, but a job cannot move back to an earlier stage.");
         }
     }
 
