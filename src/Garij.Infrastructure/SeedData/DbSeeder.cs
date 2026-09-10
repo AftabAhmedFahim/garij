@@ -68,7 +68,8 @@ public static class DbSeeder
                                 Email = acc.Email,
                                 PhoneNumber = acc.Phone,
                                 Role = acc.Role,
-                                CreatedAt = DateTime.UtcNow
+                                CreatedAt = DateTime.UtcNow,
+                                GarageId = "default-garij-master"
                             });
                             await context.SaveChangesAsync();
                         }
@@ -97,6 +98,7 @@ public static class DbSeeder
                         BuyerName = staff.Name,
                         BuyerEmail = staff.Email,
                         WorkshopName = "Garij Master Workshop",
+                        GarageId = "default-garij-master",
                         Amount = 499.00m,
                         Currency = "USD",
                         PaymentMethod = "SystemSeeded",
@@ -120,6 +122,7 @@ public static class DbSeeder
                     BuyerName = "Demo Workshop Owner",
                     BuyerEmail = "demo@garij.com",
                     WorkshopName = "Demo Auto Service",
+                    GarageId = "demo-auto-service-garage",
                     Amount = 499.00m,
                     Currency = "USD",
                     PaymentMethod = "DemoKey",

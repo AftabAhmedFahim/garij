@@ -160,7 +160,8 @@ public static class DemoDataSeeder
                 Email = email,
                 PhoneNumber = phone,
                 Role = UserRole.Mechanic,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                GarageId = "default-garij-master"
             });
         }
 
