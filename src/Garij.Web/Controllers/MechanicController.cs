@@ -140,7 +140,7 @@ public class MechanicController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> JobBoard(int? mechanicId)
+    public async Task<IActionResult> JobBoard(int? mechanicId, JobStatus? status, string? sortBy, string? search)
     {
         var currentUser = await GetCurrentStaffUserAsync();
         
@@ -150,19 +150,13 @@ public class MechanicController : Controller
             mechanicId = currentUser.Id;
         }
 
-        IEnumerable<ServiceJobDto> jobs;
-        if (mechanicId.HasValue && mechanicId.Value > 0)
-        {
-            jobs = await _serviceJobService.GetJobsByMechanicAsync(mechanicId.Value);
-            ViewBag.SelectedMechanicId = mechanicId.Value;
-        }
-        else
-        {
-            jobs = await _serviceJobService.GetAllServiceJobsAsync();
-            ViewBag.SelectedMechanicId = null;
-        }
+        var jobs = await _serviceJobService.GetFilteredServiceJobsAsync(status, mechanicId, sortBy, search);
 
         await PopulateMechanicsDropDownList(mechanicId);
+        ViewBag.SelectedMechanicId = mechanicId;
+        ViewBag.SelectedStatus = status;
+        ViewBag.SelectedSortBy = sortBy ?? "date_desc";
+        ViewBag.SearchTerm = search;
         ViewBag.CurrentStaffUser = currentUser;
 
         return View(jobs);
@@ -170,7 +164,7 @@ public class MechanicController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int serviceJobId, JobStatus newStatus, int? mechanicId)
+    public async Task<IActionResult> UpdateStatus(int serviceJobId, JobStatus newStatus, int? mechanicId, JobStatus? filterStatus = null, string? sortBy = null, string? search = null)
     {
         try
         {
@@ -182,12 +176,12 @@ public class MechanicController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+        return RedirectToAction(nameof(JobBoard), new { mechanicId, status = filterStatus, sortBy, search });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveNotes(int serviceJobId, string diagnosticNotes, int? mechanicId)
+    public async Task<IActionResult> SaveNotes(int serviceJobId, string diagnosticNotes, int? mechanicId, JobStatus? filterStatus = null, string? sortBy = null, string? search = null)
     {
         try
         {
@@ -199,7 +193,7 @@ public class MechanicController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+        return RedirectToAction(nameof(JobBoard), new { mechanicId, status = filterStatus, sortBy, search });
     }
 
     private async Task<Garij.Domain.Entities.User?> GetCurrentStaffUserAsync()

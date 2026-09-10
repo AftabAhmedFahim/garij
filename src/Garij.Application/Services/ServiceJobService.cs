@@ -41,6 +41,44 @@ public class ServiceJobService : IServiceJobService
         return jobs.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null)
+    {
+        var jobs = await _serviceJobRepository.GetAllWithDetailsAsync();
+
+        if (status.HasValue)
+        {
+            jobs = jobs.Where(j => j.Status == status.Value);
+        }
+
+        if (mechanicId.HasValue && mechanicId.Value > 0)
+        {
+            jobs = jobs.Where(j => j.MechanicAssignments != null && j.MechanicAssignments.Any(ma => ma.UserId == mechanicId.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            jobs = jobs.Where(j =>
+                j.BookingReference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (j.Vehicle != null && j.Vehicle.LicensePlateNumber.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                (j.Customer != null && j.Customer.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                (j.Vehicle != null && (j.Vehicle.Make.Contains(term, StringComparison.OrdinalIgnoreCase) || j.Vehicle.Model.Contains(term, StringComparison.OrdinalIgnoreCase))));
+        }
+
+        var dtos = jobs.Select(MapToDto);
+
+        dtos = sortBy?.ToLowerInvariant() switch
+        {
+            "date_asc" => dtos.OrderBy(j => j.CreatedAt),
+            "date_desc" => dtos.OrderByDescending(j => j.CreatedAt),
+            "status" => dtos.OrderBy(j => j.Status).ThenByDescending(j => j.CreatedAt),
+            "plate" => dtos.OrderBy(j => j.VehiclePlateNumber),
+            _ => dtos.OrderByDescending(j => j.CreatedAt)
+        };
+
+        return dtos.ToList();
+    }
+
     public async Task<ServiceJobDto?> GetServiceJobByIdAsync(int id)
     {
         var job = await _serviceJobRepository.GetByIdWithDetailsAsync(id);

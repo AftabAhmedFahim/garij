@@ -11,13 +11,14 @@ namespace Garij.Tests;
 public class WebTests
 {
     [Fact]
-    public void DashboardController_Index_ReturnsView()
+    public async Task DashboardController_Index_ReturnsView()
     {
         var controller = new DashboardController();
 
-        var result = controller.Index();
+        var result = await controller.Index();
 
-        Assert.IsType<ViewResult>(result);
+        var viewResult = Assert.IsType<ViewResult>(result);
+        Assert.IsType<FrontDeskDashboardViewModel>(viewResult.Model);
     }
 
     [Fact]
@@ -150,6 +151,7 @@ public class WebTests
         public Task DeleteVehicleAsync(int id) => throw new NotImplementedException();
         public Task<IEnumerable<ServiceJobDto>> GetAllServiceJobsAsync() => throw new NotImplementedException();
         public Task<IEnumerable<ServiceJobDto>> GetServiceJobsByStatusAsync(JobStatus status) => throw new NotImplementedException();
+        public Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null) => throw new NotImplementedException();
         public Task<ServiceJobDto?> GetServiceJobByIdAsync(int id) => throw new NotImplementedException();
         public Task<ServiceJobDto> CreateServiceJobAsync(ServiceJobDto serviceJob) => throw new NotImplementedException();
         public Task<ServiceJobDto> UpdateServiceJobAsync(ServiceJobDto serviceJob) => throw new NotImplementedException();

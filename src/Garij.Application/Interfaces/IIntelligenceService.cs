@@ -7,6 +7,8 @@ public interface IIntelligenceService
 {
     Task<IEnumerable<VehicleDto>> PredictMaintenanceDueAsync();
 
+    Task<IEnumerable<VehicleMaintenancePredictionDto>> FlagVehiclesDueForServiceAsync();
+
     Task<TimeSpan> EstimateJobDurationAsync(int serviceJobId);
 
     Task<IEnumerable<PartDto>> PredictPartsShortageAsync();

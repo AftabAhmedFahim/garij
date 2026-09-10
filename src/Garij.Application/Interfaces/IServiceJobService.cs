@@ -9,6 +9,9 @@ public interface IServiceJobService
 
     Task<IEnumerable<ServiceJobDto>> GetServiceJobsByStatusAsync(JobStatus status);
 
+    Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null)
+        => GetAllServiceJobsAsync();
+
     Task<ServiceJobDto?> GetServiceJobByIdAsync(int id);
 
     Task<ServiceJobDto?> GetServiceJobByBookingReferenceAsync(string bookingReference);

@@ -5,6 +5,10 @@
 @{
     ViewData["Title"] = "Service Jobs";
     var selectedStatus = ViewBag.SelectedStatus as JobStatus?;
+    var selectedMechanicId = ViewBag.SelectedMechanicId as int?;
+    var mechanics = ViewBag.Mechanics as SelectList;
+    string selectedSortBy = (ViewBag.SelectedSortBy as string) ?? "date_desc";
+    string searchTerm = (ViewBag.SearchTerm as string) ?? "";
 }
 
 <div class="app-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
@@ -35,15 +39,77 @@
     </div>
 }
 
-<!-- Status Filter Pills -->
+<!-- Filters, Sorting & Search Bar -->
 <div class="app-card mb-4 py-3">
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        <span class="app-page-subtitle me-2 mb-0"><i class="bi bi-funnel me-1"></i>Filter by Status:</span>
-        <a asp-action="Index" class="app-filter-pill @(!selectedStatus.HasValue ? "active" : "")">All Jobs</a>
+    <form method="get" asp-action="Index" class="row g-2 align-items-end mb-3">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="status" class="app-form-label small mb-1"><i class="bi bi-funnel me-1 text-info"></i>Status:</label>
+            <select name="status" id="status" class="app-form-select" onchange="this.form.submit()">
+                <option value="">-- All Statuses --</option>
+                @foreach (JobStatus st in Enum.GetValues(typeof(JobStatus)))
+                {
+                    if (selectedStatus.HasValue && selectedStatus.Value == st)
+                    {
+                        <option value="@st" selected="selected">@st</option>
+                    }
+                    else
+                    {
+                        <option value="@st">@st</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="mechanicId" class="app-form-label small mb-1"><i class="bi bi-person-gear me-1 text-info"></i>Mechanic:</label>
+            <select name="mechanicId" id="mechanicId" class="app-form-select" onchange="this.form.submit()">
+                <option value="">-- All Mechanics --</option>
+                @if (mechanics != null)
+                {
+                    foreach (var item in mechanics)
+                    {
+                        if (selectedMechanicId?.ToString() == item.Value)
+                        {
+                            <option value="@item.Value" selected="selected">@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="sortBy" class="app-form-label small mb-1"><i class="bi bi-sort-down me-1 text-info"></i>Sort Date:</label>
+            <select name="sortBy" id="sortBy" class="app-form-select" onchange="this.form.submit()">
+                <!option value="date_desc" @(selectedSortBy == "date_desc" ? "selected" : "")>Newest First</!option>
+                <!option value="date_asc" @(selectedSortBy == "date_asc" ? "selected" : "")>Oldest First</!option>
+                <!option value="status" @(selectedSortBy == "status" ? "selected" : "")>By Status</!option>
+                <!option value="plate" @(selectedSortBy == "plate" ? "selected" : "")>By Plate</!option>
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="search" class="app-form-label small mb-1"><i class="bi bi-search me-1 text-info"></i>Search:</label>
+            <div class="input-group">
+                <input type="text" name="search" id="search" class="app-form-control" placeholder="Plate, Ref, Owner..." value="@searchTerm" />
+                <button type="submit" class="app-btn app-btn-primary" title="Search">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Quick Status Filter Pills -->
+    <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top border-secondary border-opacity-25">
+        <span class="app-page-subtitle me-2 mb-0"><i class="bi bi-tag me-1"></i>Quick Filter:</span>
+        <a asp-action="Index" asp-route-mechanicId="@selectedMechanicId" asp-route-sortBy="@selectedSortBy" asp-route-search="@searchTerm" class="app-filter-pill @(!selectedStatus.HasValue ? "active" : "")">All Jobs</a>
         @foreach (JobStatus status in Enum.GetValues(typeof(JobStatus)))
         {
             var isSelected = selectedStatus.HasValue && selectedStatus.Value == status;
-            <a asp-action="Index" asp-route-status="@status" class="app-filter-pill @(isSelected ? "active" : "")">
+            <a asp-action="Index" asp-route-status="@status" asp-route-mechanicId="@selectedMechanicId" asp-route-sortBy="@selectedSortBy" asp-route-search="@searchTerm" class="app-filter-pill @(isSelected ? "active" : "")">
                 @status
             </a>
         }

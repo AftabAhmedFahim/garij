@@ -7,48 +7,96 @@
     int? selectedMechanicId = ViewBag.SelectedMechanicId as int?;
     var mechanics = ViewBag.Mechanics as SelectList;
     var currentStaffUser = ViewBag.CurrentStaffUser as Garij.Domain.Entities.User;
+    var selectedStatus = ViewBag.SelectedStatus as JobStatus?;
+    string selectedSortBy = (ViewBag.SelectedSortBy as string) ?? "date_desc";
+    string searchTerm = (ViewBag.SearchTerm as string) ?? "";
 }
 
-<!-- Header & Filter Section -->
+<!-- Header & Advanced Filter Section -->
 <div class="app-card mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
         <div>
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-kanban fs-2 text-info"></i>
                 <h1 class="app-page-title mb-0">Mechanic Job Board</h1>
             </div>
-            <p class="app-page-subtitle mt-1">Touch-friendly workflow dashboard for active vehicle repairs &amp; diagnostic tasks.</p>
+            <p class="app-page-subtitle mt-1 mb-0">Touch-friendly workflow dashboard for active vehicle repairs &amp; diagnostic tasks.</p>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto justify-content-md-end">
+        <div class="d-flex flex-wrap align-items-center gap-2">
             @if (User.IsInRole("Admin") || User.IsInRole("FrontDesk"))
             {
                 <a asp-controller="ServiceJob" asp-action="AddEmployee" class="app-btn app-btn-outline app-btn-sm text-nowrap">
                     <i class="bi bi-person-plus-fill me-1 text-info"></i> Add Employee
                 </a>
             }
-            <form method="get" asp-controller="Mechanic" asp-action="JobBoard" class="d-flex align-items-center gap-2">
-                <label for="mechanicId" class="app-form-label mb-0 text-nowrap">Filter Mechanic:</label>
-                <select name="mechanicId" id="mechanicId" class="app-form-select" onchange="this.form.submit()">
-                    <option value="">-- All Assigned Jobs --</option>
-                    @if (mechanics != null)
-                    {
-                        foreach (var item in mechanics)
-                        {
-                            if (selectedMechanicId?.ToString() == item.Value)
-                            {
-                                <option value="@item.Value" selected="selected">@item.Text</option>
-                            }
-                            else
-                            {
-                                <option value="@item.Value">@item.Text</option>
-                            }
-                        }
-                    }
-                </select>
-            </form>
+            <a asp-action="JobBoard" class="app-btn app-btn-outline app-btn-sm text-nowrap">
+                <i class="bi bi-arrow-clockwise me-1"></i> Reset Filters
+            </a>
         </div>
     </div>
+
+    <!-- Multi-dimensional Filter & Sorting Bar -->
+    <form method="get" asp-controller="Mechanic" asp-action="JobBoard" class="row g-2 align-items-end">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="status" class="app-form-label small mb-1"><i class="bi bi-funnel me-1 text-info"></i>Filter Status:</label>
+            <select name="status" id="status" class="app-form-select" onchange="this.form.submit()">
+                <option value="">-- All Statuses --</option>
+                @foreach (JobStatus st in Enum.GetValues(typeof(JobStatus)))
+                {
+                    if (selectedStatus.HasValue && selectedStatus.Value == st)
+                    {
+                        <option value="@st" selected="selected">@st</option>
+                    }
+                    else
+                    {
+                        <option value="@st">@st</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="mechanicId" class="app-form-label small mb-1"><i class="bi bi-person-gear me-1 text-info"></i>Filter Mechanic:</label>
+            <select name="mechanicId" id="mechanicId" class="app-form-select" onchange="this.form.submit()">
+                <option value="">-- All Mechanics / Jobs --</option>
+                @if (mechanics != null)
+                {
+                    foreach (var item in mechanics)
+                    {
+                        if (selectedMechanicId?.ToString() == item.Value)
+                        {
+                            <option value="@item.Value" selected="selected">@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="sortBy" class="app-form-label small mb-1"><i class="bi bi-sort-down me-1 text-info"></i>Sort By Date:</label>
+            <select name="sortBy" id="sortBy" class="app-form-select" onchange="this.form.submit()">
+                <!option value="date_desc" @(selectedSortBy == "date_desc" ? "selected" : "")>Newest First</!option>
+                <!option value="date_asc" @(selectedSortBy == "date_asc" ? "selected" : "")>Oldest First</!option>
+                <!option value="status" @(selectedSortBy == "status" ? "selected" : "")>By Status</!option>
+                <!option value="plate" @(selectedSortBy == "plate" ? "selected" : "")>By Plate Number</!option>
+            </select>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label for="search" class="app-form-label small mb-1"><i class="bi bi-search me-1 text-info"></i>Search:</label>
+            <div class="input-group">
+                <input type="text" name="search" id="search" class="app-form-control" placeholder="Plate, Ref, Customer..." value="@searchTerm" />
+                <button type="submit" class="app-btn app-btn-primary" title="Search">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Alert Messages -->
@@ -72,7 +120,7 @@
         <div class="app-empty-state">
             <i class="bi bi-clipboard-check"></i>
             <h4 class="text-white fw-semibold">No assigned jobs found</h4>
-            <p class="app-page-subtitle mb-0">Select another mechanic from the filter or check back later for new assignments.</p>
+            <p class="app-page-subtitle mb-0">No jobs match your selected status, mechanic, or search filters.</p>
         </div>
     </div>
 }
@@ -98,25 +146,22 @@ else
                 JobStatus.InspectionPending => "Start Inspection",
                 JobStatus.CustomerApprovalNeeded => "Request Customer Approval",
                 JobStatus.InProgress => "Begin Work (In Progress)",
-                JobStatus.Completed => "Mark Job Completed",
-                _ => ""
+                JobStatus.Completed => "Mark as Completed",
+                _ => string.Empty
             };
 
             <div class="col-12 col-md-6 col-xl-4">
-                <div class="app-card h-100 d-flex flex-column @(isCompleted ? "opacity-75" : "")">
-                    <!-- Card Header -->
-                    <div class="d-flex justify-content-between align-items-center pb-3 mb-3" style="border-bottom: 1px solid var(--border-dark);">
-                        <div>
-                            <span class="fw-bold text-white">@job.BookingReference</span>
-                            <span class="app-badge @StatusBadgeHelper.BadgeClass(job.Status) ms-2">@job.Status</span>
-                        </div>
-                        <span class="app-page-subtitle small"><i class="bi bi-clock me-1"></i>@job.CreatedAt.ToString("MMM dd, HH:mm")</span>
+                <div class="app-card h-100 d-flex flex-column" style="border-top: 3px solid @(isCompleted ? "var(--color-success)" : isCancelled ? "var(--color-danger)" : "var(--color-cyan)");">
+                    <!-- Card Header: Ref & Status -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="font-monospace fw-bold text-info fs-6">@job.BookingReference</span>
+                        <span class="app-badge @StatusBadgeHelper.BadgeClass(job.Status) ms-2">@job.Status</span>
                     </div>
 
-                    <!-- Vehicle Details -->
-                    <div class="d-flex align-items-center mb-3 p-2 rounded-3" style="background: rgba(255,255,255,0.04);">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width:44px;height:44px;background:var(--accent-blue-btn);box-shadow:0 0 12px rgba(0,114,245,0.5);">
-                            <i class="bi bi-car-front-fill text-white fs-5"></i>
+                    <!-- Vehicle Info -->
+                    <div class="d-flex align-items-center gap-3 mb-3 p-2 rounded-3" style="background: rgba(255,255,255,0.03);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(0, 210, 255, 0.1); color: var(--color-cyan);">
+                            <i class="bi bi-car-front-fill fs-5"></i>
                         </div>
                         <div>
                             <h6 class="mb-0 fw-bold text-white">@job.VehiclePlateNumber</h6>
@@ -126,7 +171,7 @@ else
 
                     <!-- Job Type & Mechanics Assigned -->
                     <div class="mb-3">
-                        <div class="small fw-semibold app-page-subtitle mb-1">Job Type: <span class="text-white">@job.JobType</span></div>
+                        <div class="small fw-semibold app-page-subtitle mb-1">Job Type: <span class="text-white">@job.JobType</span> &bull; <span class="text-muted">@job.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span></div>
                         <div class="small fw-semibold app-page-subtitle mb-1">Assigned Team:</div>
                         <div class="d-flex flex-wrap">
                             @if (job.MechanicAssignments.Any())
@@ -159,6 +204,9 @@ else
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="serviceJobId" value="@job.Id" />
                                     <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                    <input type="hidden" name="filterStatus" value="@selectedStatus" />
+                                    <input type="hidden" name="sortBy" value="@selectedSortBy" />
+                                    <input type="hidden" name="search" value="@searchTerm" />
                                     <textarea name="diagnosticNotes" class="app-form-control mb-2" rows="3" placeholder="Add diagnostic notes...">@job.DiagnosticNotes</textarea>
                                     <button type="submit" class="app-btn app-btn-primary app-btn-sm w-100">Save Diagnostic Notes</button>
                                 </form>
@@ -176,6 +224,9 @@ else
                                     <input type="hidden" name="serviceJobId" value="@job.Id" />
                                     <input type="hidden" name="newStatus" value="@nextStatus.Value" />
                                     <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                    <input type="hidden" name="filterStatus" value="@selectedStatus" />
+                                    <input type="hidden" name="sortBy" value="@selectedSortBy" />
+                                    <input type="hidden" name="search" value="@searchTerm" />
                                     <button type="submit" class="app-btn app-btn-primary w-100 py-3"
                                             title="@(nextStatus == JobStatus.Completed ? "Ensure parts used are logged before marking completed" : "")">
                                         <i class="bi bi-arrow-right-circle-fill"></i>
@@ -198,6 +249,9 @@ else
                                         <input type="hidden" name="serviceJobId" value="@job.Id" />
                                         <input type="hidden" name="newStatus" value="@JobStatus.Cancelled" />
                                         <input type="hidden" name="mechanicId" value="@selectedMechanicId" />
+                                        <input type="hidden" name="filterStatus" value="@selectedStatus" />
+                                        <input type="hidden" name="sortBy" value="@selectedSortBy" />
+                                        <input type="hidden" name="search" value="@searchTerm" />
                                         <button type="submit" class="app-btn app-btn-danger" title="Cancel Job">
                                             <i class="bi bi-x-circle"></i>
                                         </button>

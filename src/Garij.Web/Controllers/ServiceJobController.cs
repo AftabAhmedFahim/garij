@@ -36,19 +36,21 @@ public class ServiceJobController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(JobStatus? status)
+    public async Task<IActionResult> Index(JobStatus? status, int? mechanicId, string? sortBy, string? search)
     {
-        IEnumerable<ServiceJobDto> jobs;
-        if (status.HasValue)
-        {
-            jobs = await _serviceJobService.GetServiceJobsByStatusAsync(status.Value);
-            ViewBag.SelectedStatus = status.Value;
-        }
-        else
-        {
-            jobs = await _serviceJobService.GetAllServiceJobsAsync();
-            ViewBag.SelectedStatus = null;
-        }
+        var jobs = await _serviceJobService.GetFilteredServiceJobsAsync(status, mechanicId, sortBy, search);
+
+        var mechanics = _context.StaffUsers
+            .Where(u => u.Role == UserRole.Mechanic)
+            .OrderBy(u => u.FullName)
+            .Select(u => new { u.Id, u.FullName })
+            .ToList();
+
+        ViewBag.Mechanics = new SelectList(mechanics, "Id", "FullName", mechanicId);
+        ViewBag.SelectedStatus = status;
+        ViewBag.SelectedMechanicId = mechanicId;
+        ViewBag.SelectedSortBy = sortBy ?? "date_desc";
+        ViewBag.SearchTerm = search;
 
         return View(jobs);
     }

@@ -73,6 +73,21 @@
 
 ## 📝 Recent Progress Log
 
+### [2026-09-10] - Stage 3: Service-Due Vehicle Flagging & Advanced Job Board Filtering (Rakibul Islam Emon)
+- **Vehicle Maintenance Predictions (FR-12)**:
+  - Implemented `IIntelligenceService.FlagVehiclesDueForServiceAsync` and `PredictMaintenanceDueAsync` in `IntelligenceService.cs`.
+  - Computes predictive maintenance cadences using each vehicle's completed service job history, calculating individual service cycle intervals or applying a standard 90-day baseline for single-service vehicles.
+  - Generates rich projection details via `VehicleMaintenancePredictionDto`: last service date, days elapsed, forecast due date, days overdue/remaining, urgency level (`Overdue`, `Due Soon`), and recommended service action.
+- **Front-Desk Dashboard Integration**:
+  - Integrated `IIntelligenceService` into `DashboardController.cs` and `Views/Dashboard/Index.cshtml` via `FrontDeskDashboardViewModel`.
+  - Prominently displays overdue and due-soon vehicles with customer contact information, urgency badges, and quick-action "Book Job" buttons pre-filling the vehicle.
+- **Job Board Multi-Dimensional Filtering & Sorting**:
+  - Added `GetFilteredServiceJobsAsync` to `IServiceJobService` and `ServiceJobService` supporting simultaneous filtering by status, mechanic, and date order (`date_desc`, `date_asc`, `status`, `plate`), alongside full-text search.
+  - Enhanced touch-friendly `Views/Mechanic/JobBoard.cshtml` and `Views/ServiceJob/Index.cshtml` with comprehensive filter bars and state preservation across status transitions and diagnostic note updates.
+- **Status State Machine Integration Testing**:
+  - Authored comprehensive integration test suite `ServiceJobStatusTransitionIntegrationTests.cs` covering legal workflow advancement (`Requested` -> `InspectionPending` -> `CustomerApprovalNeeded` -> `InProgress` -> `Completed`), valid cancellations, terminal state locks, illegal state transitions (BR-007 rejections), job board filtering/sorting, and maintenance prediction forecasting.
+  - 107/107 solution tests passing (100% pass rate).
+
 ### [2026-09-08] - Light Mode & Dark Mode System with Image-Free Minimalist Light Aesthetic (Rakibul Islam Emon)
 - **Light & Dark Theme Engine**:
   - Implemented client-side instant theme switching engine with `theme-toggle.js`, persisting preference in `localStorage.getItem("garij_theme")` (`dark` or `light`).
