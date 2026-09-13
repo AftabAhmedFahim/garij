@@ -1,4 +1,4 @@
-using Garij.Domain.Enums;
+﻿using Garij.Domain.Enums;
 
 namespace Garij.Application.DTOs;
 
@@ -31,4 +31,6 @@ public class ServiceJobDto
     public string? GarageId { get; set; }
 
     public List<MechanicAssignmentDto> MechanicAssignments { get; set; } = new();
+
+    public List<JobServiceDetailDto> JobServiceDetails { get; set; } = new();
 }

@@ -1,4 +1,4 @@
-using Garij.Application.DTOs;
+﻿using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
@@ -164,7 +164,7 @@ public class ServiceJobService : IServiceJobService
             CustomerId = vehicle.CustomerId,
             BookingReference = bookingRef,
             JobType = serviceJobDto.JobType,
-            Status = serviceJobDto.Status == 0 ? JobStatus.Requested : serviceJobDto.Status,
+            Status = ValidateInitialStatus(serviceJobDto.Status),
             DiagnosticNotes = serviceJobDto.DiagnosticNotes?.Trim(),
             CreatedAt = DateTime.UtcNow,
             GarageId = garageId
@@ -185,6 +185,7 @@ public class ServiceJobService : IServiceJobService
         if (entity.Status != serviceJobDto.Status)
         {
             ValidateStatusTransition(entity.Status, serviceJobDto.Status);
+            ValidateCompletionReadiness(entity, serviceJobDto.Status);
         }
 
         entity.JobType = serviceJobDto.JobType;
@@ -210,6 +211,7 @@ public class ServiceJobService : IServiceJobService
         if (entity.Status != status)
         {
             ValidateStatusTransition(entity.Status, status);
+            ValidateCompletionReadiness(entity, status);
         }
 
         entity.Status = status;
@@ -380,6 +382,51 @@ public class ServiceJobService : IServiceJobService
         JobStatus.Completed
     ];
 
+    /// <summary>
+    /// Completed and Cancelled end a job's life. A job only ever arrives at one
+    /// of them through a status update, which is what stamps the completion date
+    /// and raises the completion notification, so a job created directly in a
+    /// terminal status would carry neither.
+    /// </summary>
+    private static bool IsTerminal(JobStatus status) =>
+        status is JobStatus.Completed or JobStatus.Cancelled;
+
+    /// <summary>
+    /// The status a job may open in. Intake always starts a job at Requested; a
+    /// caller bypassing the intake form cannot drop a brand new job into a
+    /// terminal status.
+    /// </summary>
+    private static JobStatus ValidateInitialStatus(JobStatus requestedStatus)
+    {
+        if (IsTerminal(requestedStatus))
+        {
+            throw new BusinessRuleException("BR-007", $"A new service job cannot be created with status '{requestedStatus}'. A job opens as '{JobStatus.Requested}' and only reaches '{JobStatus.Completed}' or '{JobStatus.Cancelled}' through a status update.");
+        }
+
+        return requestedStatus;
+    }
+
+    /// <summary>
+    /// A job is only finished once there is something to show for it. Completion is
+    /// what an invoice is raised from, so a job carrying neither a logged part nor a
+    /// recorded service would bill as an empty job and land in the service history
+    /// with nothing against it. Labour-only work - a diagnostic, an inspection -
+    /// clears this through its service details, which is the same bar BR-011 already
+    /// applies when the invoice itself is generated.
+    /// </summary>
+    private static void ValidateCompletionReadiness(ServiceJob job, JobStatus newStatus)
+    {
+        if (newStatus != JobStatus.Completed)
+        {
+            return;
+        }
+
+        if (job.JobPartsUsed.Count == 0 && job.JobServiceDetails.Count == 0)
+        {
+            throw new BusinessRuleException("BR-008", $"Cannot complete job '{job.BookingReference}' with nothing logged against it. Log the parts used or the services performed before marking it '{JobStatus.Completed}'.");
+        }
+    }
+
     private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)
     {
         if (currentStatus == newStatus)
@@ -460,6 +507,15 @@ public class ServiceJobService : IServiceJobService
             MechanicName = ma.User?.FullName ?? "Unknown",
             RoleInJob = ma.RoleInJob,
             AssignedAt = ma.AssignedAt
+        }).ToList(),
+        JobServiceDetails = (job.JobServiceDetails ?? Enumerable.Empty<JobServiceDetail>()).Select(jsd => new JobServiceDetailDto
+        {
+            Id = jsd.Id,
+            ServiceJobId = jsd.ServiceJobId,
+            ServiceCatalogId = jsd.ServiceCatalogId,
+            ServiceName = jsd.ServiceCatalog?.Name ?? "Service",
+            Quantity = jsd.Quantity,
+            PriceAtBooking = jsd.PriceAtBooking
         }).ToList()
     };
 }
