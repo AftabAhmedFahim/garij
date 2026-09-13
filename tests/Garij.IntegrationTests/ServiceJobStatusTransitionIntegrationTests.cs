@@ -1,4 +1,4 @@
-using Garij.Application.DTOs;
+﻿using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Application.Services;
 using Garij.Domain.Entities;
@@ -560,5 +560,87 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
         Assert.Equal("Overdue", predC.UrgencyLevel);
         Assert.Equal(0, predC.TotalServicesCompleted);
         Assert.Contains("Initial", predC.RecommendedService);
+    }
+
+    [Fact]
+    public async Task JobIntake_CreatesJobAsRequested_WithNoCompletionDateOrNotification()
+    {
+        // Arrange
+        await using var context = new GarijDbContext(_options);
+        var (service, _) = CreateServiceJobService(context);
+        var (_, vehicleId, _) = await SeedBasicEntitiesAsync(context);
+
+        // Act
+        var created = await service.CreateServiceJobAsync(new ServiceJobDto
+        {
+            VehicleId = vehicleId,
+            JobType = JobType.RoutineService,
+            Status = JobStatus.Requested
+        });
+
+        // Assert
+        Assert.Equal(JobStatus.Requested, created.Status);
+        Assert.Null(created.CompletedAt);
+
+        var persisted = await context.ServiceJobs.FindAsync(created.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal(JobStatus.Requested, persisted.Status);
+        Assert.Null(persisted.CompletedAt);
+
+        // A job that has only just been booked in has nothing to notify on yet.
+        Assert.Empty(context.Notifications.Where(n => n.ServiceJobId == created.Id));
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Completed)]
+    [InlineData(JobStatus.Cancelled)]
+    public async Task JobIntake_RejectsTerminalInitialStatus_AndPersistsNothing(JobStatus terminalStatus)
+    {
+        // Arrange
+        await using var context = new GarijDbContext(_options);
+        var (service, _) = CreateServiceJobService(context);
+        var (_, vehicleId, _) = await SeedBasicEntitiesAsync(context);
+
+        // Act & Assert: the intake form only offers Requested, and a request that
+        // forges a terminal status past it is refused by the same BR-007 rule that
+        // guards status updates.
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.CreateServiceJobAsync(new ServiceJobDto
+            {
+                VehicleId = vehicleId,
+                JobType = JobType.Repair,
+                Status = terminalStatus
+            }));
+
+        Assert.Equal("BR-007", ex.RuleCode);
+
+        // Nothing reached the database, so service history stays clean.
+        Assert.Empty(context.ServiceJobs.Where(j => j.VehicleId == vehicleId));
+        Assert.Empty(context.Notifications);
+    }
+
+    [Fact]
+    public async Task JobIntake_JobCreatedAsRequested_StillCompletesThroughNormalStatusUpdate()
+    {
+        // Arrange
+        await using var context = new GarijDbContext(_options);
+        var (service, _) = CreateServiceJobService(context);
+        var (_, vehicleId, _) = await SeedBasicEntitiesAsync(context);
+
+        var created = await service.CreateServiceJobAsync(new ServiceJobDto
+        {
+            VehicleId = vehicleId,
+            JobType = JobType.RoutineService,
+            Status = JobStatus.Requested
+        });
+
+        // Act: completion goes through the status update, which is what stamps the
+        // date and raises the notification.
+        var completed = await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.Completed);
+
+        // Assert
+        Assert.Equal(JobStatus.Completed, completed.Status);
+        Assert.NotNull(completed.CompletedAt);
+        Assert.Single(context.Notifications.Where(n => n.ServiceJobId == created.Id));
     }
 }

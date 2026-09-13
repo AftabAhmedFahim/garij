@@ -1,4 +1,4 @@
-using Garij.Application.DTOs;
+﻿using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Application.Services;
 using Garij.Domain.Entities;
@@ -354,6 +354,63 @@ public class ServiceJobServiceTests : IDisposable
             _serviceJobService.AssignMechanicAsync(job.Id, frontDeskUser.Id, RoleInJob.Assistant));
         Assert.Equal("BR-003", exFd.RuleCode);
         Assert.Contains("Only users with the Mechanic role can be assigned", exFd.Message);
+    }
+
+    [Fact]
+    public async Task CreateServiceJobAsync_OpensJobAsRequested_WithNoCompletionDate()
+    {
+        // Arrange
+        var customer = new Customer { FullName = "Intake Customer", Email = "intake@test.com", PhoneNumber = "123", Address = "Test" };
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        var vehicle = new Vehicle { CustomerId = customer.Id, LicensePlateNumber = "DHA-3030", Make = "Nissan", Model = "Note", Year = 2021, Vin = "VIN303", Color = "Grey" };
+        _context.Vehicles.Add(vehicle);
+        await _context.SaveChangesAsync();
+
+        // Act: the intake form only ever offers Requested.
+        var job = await _serviceJobService.CreateServiceJobAsync(new ServiceJobDto
+        {
+            VehicleId = vehicle.Id,
+            JobType = JobType.RoutineService,
+            Status = JobStatus.Requested
+        });
+
+        // Assert
+        Assert.Equal(JobStatus.Requested, job.Status);
+        Assert.Null(job.CompletedAt);
+
+        var persisted = await _context.ServiceJobs.FindAsync(job.Id);
+        Assert.NotNull(persisted);
+        Assert.Equal(JobStatus.Requested, persisted.Status);
+        Assert.Null(persisted.CompletedAt);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Completed)]
+    [InlineData(JobStatus.Cancelled)]
+    public async Task CreateServiceJobAsync_ThrowsBusinessRuleException_WhenInitialStatusIsTerminal(JobStatus terminalStatus)
+    {
+        // Arrange
+        var customer = new Customer { FullName = "Test", Email = $"terminal-{terminalStatus}@test.com", PhoneNumber = "123", Address = "Test" };
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        var vehicle = new Vehicle { CustomerId = customer.Id, LicensePlateNumber = $"TERM-{(int)terminalStatus}", Make = "Toyota", Model = "Premio", Year = 2020, Vin = $"VINTERM{(int)terminalStatus}", Color = "White" };
+        _context.Vehicles.Add(vehicle);
+        await _context.SaveChangesAsync();
+
+        // Act & Assert: a forged post that bypasses the intake form is still refused.
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _serviceJobService.CreateServiceJobAsync(new ServiceJobDto
+            {
+                VehicleId = vehicle.Id,
+                JobType = JobType.Repair,
+                Status = terminalStatus
+            }));
+
+        Assert.Equal("BR-007", ex.RuleCode);
+        Assert.Empty(_context.ServiceJobs.Where(j => j.VehicleId == vehicle.Id));
     }
 
     public void Dispose()

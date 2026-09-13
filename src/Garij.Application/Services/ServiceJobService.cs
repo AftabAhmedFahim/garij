@@ -1,4 +1,4 @@
-using Garij.Application.DTOs;
+﻿using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
@@ -164,7 +164,7 @@ public class ServiceJobService : IServiceJobService
             CustomerId = vehicle.CustomerId,
             BookingReference = bookingRef,
             JobType = serviceJobDto.JobType,
-            Status = serviceJobDto.Status == 0 ? JobStatus.Requested : serviceJobDto.Status,
+            Status = ValidateInitialStatus(serviceJobDto.Status),
             DiagnosticNotes = serviceJobDto.DiagnosticNotes?.Trim(),
             CreatedAt = DateTime.UtcNow,
             GarageId = garageId
@@ -379,6 +379,30 @@ public class ServiceJobService : IServiceJobService
         JobStatus.InProgress,
         JobStatus.Completed
     ];
+
+    /// <summary>
+    /// Completed and Cancelled end a job's life. A job only ever arrives at one
+    /// of them through a status update, which is what stamps the completion date
+    /// and raises the completion notification, so a job created directly in a
+    /// terminal status would carry neither.
+    /// </summary>
+    private static bool IsTerminal(JobStatus status) =>
+        status is JobStatus.Completed or JobStatus.Cancelled;
+
+    /// <summary>
+    /// The status a job may open in. Intake always starts a job at Requested; a
+    /// caller bypassing the intake form cannot drop a brand new job into a
+    /// terminal status.
+    /// </summary>
+    private static JobStatus ValidateInitialStatus(JobStatus requestedStatus)
+    {
+        if (IsTerminal(requestedStatus))
+        {
+            throw new BusinessRuleException("BR-007", $"A new service job cannot be created with status '{requestedStatus}'. A job opens as '{JobStatus.Requested}' and only reaches '{JobStatus.Completed}' or '{JobStatus.Cancelled}' through a status update.");
+        }
+
+        return requestedStatus;
+    }
 
     private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)
     {
