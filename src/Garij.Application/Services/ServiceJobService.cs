@@ -185,6 +185,7 @@ public class ServiceJobService : IServiceJobService
         if (entity.Status != serviceJobDto.Status)
         {
             ValidateStatusTransition(entity.Status, serviceJobDto.Status);
+            ValidateCompletionReadiness(entity, serviceJobDto.Status);
         }
 
         entity.JobType = serviceJobDto.JobType;
@@ -210,6 +211,7 @@ public class ServiceJobService : IServiceJobService
         if (entity.Status != status)
         {
             ValidateStatusTransition(entity.Status, status);
+            ValidateCompletionReadiness(entity, status);
         }
 
         entity.Status = status;
@@ -402,6 +404,27 @@ public class ServiceJobService : IServiceJobService
         }
 
         return requestedStatus;
+    }
+
+    /// <summary>
+    /// A job is only finished once there is something to show for it. Completion is
+    /// what an invoice is raised from, so a job carrying neither a logged part nor a
+    /// recorded service would bill as an empty job and land in the service history
+    /// with nothing against it. Labour-only work - a diagnostic, an inspection -
+    /// clears this through its service details, which is the same bar BR-011 already
+    /// applies when the invoice itself is generated.
+    /// </summary>
+    private static void ValidateCompletionReadiness(ServiceJob job, JobStatus newStatus)
+    {
+        if (newStatus != JobStatus.Completed)
+        {
+            return;
+        }
+
+        if (job.JobPartsUsed.Count == 0 && job.JobServiceDetails.Count == 0)
+        {
+            throw new BusinessRuleException("BR-008", $"Cannot complete job '{job.BookingReference}' with nothing logged against it. Log the parts used or the services performed before marking it '{JobStatus.Completed}'.");
+        }
     }
 
     private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)

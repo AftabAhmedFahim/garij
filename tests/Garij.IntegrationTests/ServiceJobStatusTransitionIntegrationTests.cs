@@ -103,6 +103,33 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
         return (customer.Id, vehicle.Id, mechanic.Id);
     }
 
+    /// <summary>
+    /// Logs one part against a job so it clears BR-008's completion pre-condition.
+    /// Used by tests whose subject is transition legality rather than BR-008 itself.
+    /// </summary>
+    private static async Task LogPartAgainstJobAsync(GarijDbContext context, int serviceJobId)
+    {
+        var part = new Part
+        {
+            Name = "Engine Oil 5W-30",
+            PartNumber = $"OIL-{serviceJobId:D4}",
+            UnitPrice = 12.50m,
+            QuantityInStock = 100,
+            ReorderLevel = 10
+        };
+        context.Parts.Add(part);
+        await context.SaveChangesAsync();
+
+        context.JobPartsUsed.Add(new JobPartUsed
+        {
+            ServiceJobId = serviceJobId,
+            PartId = part.Id,
+            QuantityUsed = 1,
+            PriceAtUsage = part.UnitPrice
+        });
+        await context.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task StatusStateMachine_LegalLifecycleSequence_AdvancesSuccessfullyThroughAllStages()
     {
@@ -119,6 +146,7 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
         });
 
         await service.AssignMechanicAsync(created.Id, mechanicId, RoleInJob.Lead);
+        await LogPartAgainstJobAsync(context, created.Id);
 
         // Step 1: Requested -> InspectionPending
         var step1 = await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InspectionPending);
@@ -213,6 +241,8 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
             Status = JobStatus.Requested
         });
 
+        await LogPartAgainstJobAsync(context, created.Id);
+
         // Advance to currentStatus
         if (currentStatus == JobStatus.InspectionPending)
         {
@@ -302,6 +332,8 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
             JobType = JobType.RoutineService,
             Status = JobStatus.Requested
         });
+
+        await LogPartAgainstJobAsync(context, created.Id);
 
         await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.InspectionPending);
         await service.UpdateServiceJobStatusAsync(created.Id, JobStatus.CustomerApprovalNeeded);
@@ -633,6 +665,8 @@ public class ServiceJobStatusTransitionIntegrationTests : IDisposable
             JobType = JobType.RoutineService,
             Status = JobStatus.Requested
         });
+
+        await LogPartAgainstJobAsync(context, created.Id);
 
         // Act: completion goes through the status update, which is what stamps the
         // date and raises the notification.
