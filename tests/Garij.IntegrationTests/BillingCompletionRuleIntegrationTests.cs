@@ -1,4 +1,5 @@
-using Garij.Application.Configuration;
+﻿using Garij.Application.Configuration;
+using Garij.Application.DTOs;
 using Garij.Application.Services;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
@@ -46,7 +47,7 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
         _connection.Dispose();
     }
 
-    private static (BillingService billing, ServiceJobService jobs) CreateServices(GarijDbContext context)
+    private static (BillingService billing, ServiceJobService jobs, JobServiceDetailService labour) CreateServices(GarijDbContext context)
     {
         var jobRepo = new ServiceJobRepository(context);
         var notificationService = new NotificationService(new NotificationRepository(context));
@@ -66,7 +67,12 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
             serviceJobService,
             Options.Create(new BillingSettings { TaxRatePercent = 15m }));
 
-        return (billingService, serviceJobService);
+        var labourService = new JobServiceDetailService(
+            new ServiceCatalogRepository(context),
+            new JobServiceDetailRepository(context),
+            jobRepo);
+
+        return (billingService, serviceJobService, labourService);
     }
 
     /// <summary>Seeds an InProgress job, optionally with a labour line and/or a parts line.</summary>
@@ -108,7 +114,7 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
     {
         // Arrange
         await using var context = new GarijDbContext(_options);
-        var (billing, _) = CreateServices(context);
+        var (billing, _, _) = CreateServices(context);
         var jobId = await SeedJobAsync(context, "BIL-PARTS", withLabour: true, withParts: true);
 
         // Act
@@ -128,7 +134,7 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
     {
         // Arrange: no parts at all - the case a literal "parts only" BR-008 would deadlock.
         await using var context = new GarijDbContext(_options);
-        var (billing, _) = CreateServices(context);
+        var (billing, _, _) = CreateServices(context);
         var jobId = await SeedJobAsync(context, "BIL-LABOUR", withLabour: true, withParts: false);
 
         // Act
@@ -149,7 +155,7 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
     {
         // Arrange: nothing logged - no labour, no parts.
         await using var context = new GarijDbContext(_options);
-        var (billing, jobs) = CreateServices(context);
+        var (billing, jobs, _) = CreateServices(context);
         var jobId = await SeedJobAsync(context, "BIL-EMPTY", withLabour: false, withParts: false);
 
         // Act & Assert - door 1, the direct status update: BR-008 refuses it.
@@ -170,5 +176,79 @@ public class BillingCompletionRuleIntegrationTests : IDisposable
         Assert.Equal(JobStatus.InProgress, persisted.Status);
         Assert.Null(persisted.CompletedAt);
         Assert.False(await context.Invoices.AnyAsync(i => i.ServiceJobId == jobId));
+    }
+
+    /// <summary>
+    /// TC-ACC-03: labour attached through the real labour service, parts through the real
+    /// parts service, then one invoice that must carry both. Before D-03 there was no way
+    /// to attach the labour half at all, so every invoice was parts-only.
+    /// </summary>
+    [Fact]
+    public async Task Invoice_CarriesBothLabourAndParts_WhenEachIsLoggedThroughItsOwnService()
+    {
+        // Arrange: a bare job, plus a catalogue service and a part to draw from.
+        await using var context = new GarijDbContext(_options);
+        var (billing, _, labour) = CreateServices(context);
+        var partsService = new PartsInventoryService(new PartRepository(context), new JobPartUsedRepository(context));
+
+        var jobId = await SeedJobAsync(context, "BIL-BOTH", withLabour: false, withParts: false);
+
+        var catalogService = new ServiceCatalog { Name = "Wheel Alignment", Description = "4-wheel laser alignment", BasePrice = 65.00m, EstimatedDurationMinutes = 50 };
+        context.ServiceCatalogs.Add(catalogService);
+        var part = new Part { Name = "Brake Pads Front Set", PartNumber = "BRK-PAD-F", UnitPrice = 60.00m, QuantityInStock = 10, ReorderLevel = 2 };
+        context.Parts.Add(part);
+        await context.SaveChangesAsync();
+
+        // Act: attach one labour line (2 x 65.00) and one parts line (3 x 60.00).
+        await labour.LogJobServiceAsync(new JobServiceDetailDto { ServiceJobId = jobId, ServiceCatalogId = catalogService.Id, Quantity = 2 });
+        await partsService.RecordPartUsageAsync(new JobPartUsedDto { ServiceJobId = jobId, PartId = part.Id, QuantityUsed = 3 });
+
+        var invoice = await billing.GenerateInvoiceAsync(jobId);
+
+        // Assert: 130.00 labour + 180.00 parts = 310.00, +15% tax = 356.50.
+        var serviceLine = Assert.Single(invoice.ServiceLines);
+        Assert.Equal("Wheel Alignment", serviceLine.Description);
+        Assert.Equal(130.00m, serviceLine.LineTotal);
+
+        var partLine = Assert.Single(invoice.PartLines);
+        Assert.Equal(180.00m, partLine.LineTotal);
+
+        Assert.Equal(310.00m, invoice.SubTotal);
+        Assert.Equal(46.50m, invoice.TaxAmount);
+        Assert.Equal(356.50m, invoice.TotalAmount);
+
+        // Parts logging still decrements stock - untouched by this change.
+        Assert.Equal(7, (await context.Parts.FindAsync(part.Id))!.QuantityInStock);
+    }
+
+    /// <summary>
+    /// TC-BIL-08 plus the D-02 interaction: labour attached through the new service is
+    /// enough on its own to satisfy BR-008, so a job that never consumed a part completes.
+    /// </summary>
+    [Fact]
+    public async Task LabourAttachedThroughService_SatisfiesBr008_AndCompletesJobWithNoParts()
+    {
+        // Arrange
+        await using var context = new GarijDbContext(_options);
+        var (_, jobs, labour) = CreateServices(context);
+        var jobId = await SeedJobAsync(context, "BIL-LAB08", withLabour: false, withParts: false);
+
+        var catalogService = new ServiceCatalog { Name = "Battery & Electrical System Check", Description = "Load test", BasePrice = 45.00m, EstimatedDurationMinutes = 30 };
+        context.ServiceCatalogs.Add(catalogService);
+        await context.SaveChangesAsync();
+
+        // Before any labour is attached the job is still empty, so BR-008 holds it back.
+        var blocked = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            jobs.UpdateServiceJobStatusAsync(jobId, JobStatus.Completed));
+        Assert.Equal("BR-008", blocked.RuleCode);
+
+        // Act: attach labour only - no parts are ever logged against this job.
+        await labour.LogJobServiceAsync(new JobServiceDetailDto { ServiceJobId = jobId, ServiceCatalogId = catalogService.Id, Quantity = 1 });
+        var completed = await jobs.UpdateServiceJobStatusAsync(jobId, JobStatus.Completed);
+
+        // Assert
+        Assert.Equal(JobStatus.Completed, completed.Status);
+        Assert.NotNull(completed.CompletedAt);
+        Assert.Empty(context.JobPartsUsed.Where(jpu => jpu.ServiceJobId == jobId));
     }
 }

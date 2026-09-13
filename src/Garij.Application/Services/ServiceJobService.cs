@@ -507,6 +507,15 @@ public class ServiceJobService : IServiceJobService
             MechanicName = ma.User?.FullName ?? "Unknown",
             RoleInJob = ma.RoleInJob,
             AssignedAt = ma.AssignedAt
+        }).ToList(),
+        JobServiceDetails = (job.JobServiceDetails ?? Enumerable.Empty<JobServiceDetail>()).Select(jsd => new JobServiceDetailDto
+        {
+            Id = jsd.Id,
+            ServiceJobId = jsd.ServiceJobId,
+            ServiceCatalogId = jsd.ServiceCatalogId,
+            ServiceName = jsd.ServiceCatalog?.Name ?? "Service",
+            Quantity = jsd.Quantity,
+            PriceAtBooking = jsd.PriceAtBooking
         }).ToList()
     };
 }
