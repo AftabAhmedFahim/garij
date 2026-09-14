@@ -3,6 +3,7 @@ using Garij.Application.Interfaces;
 using Garij.Domain.Enums;
 using Garij.Domain.Exceptions;
 using Garij.Web.Helpers;
+using Garij.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -85,7 +86,11 @@ public class BillingController : Controller
             return NotFound();
         }
 
-        return View(invoice);
+        return View(new RecordPaymentViewModel
+        {
+            Invoice = invoice,
+            Payment = new PaymentTransactionDto { InvoiceId = invoiceId }
+        });
     }
 
     [HttpPost]
@@ -93,6 +98,13 @@ public class BillingController : Controller
     public async Task<IActionResult> RecordPayment(int invoiceId, PaymentTransactionDto payment)
     {
         payment.InvoiceId = invoiceId;
+
+        // The DTO's own annotations (including the 100-character transaction reference limit
+        // that matches the column) are only enforced if ModelState is actually consulted.
+        if (!ModelState.IsValid)
+        {
+            return await RedisplayRecordPaymentAsync(invoiceId, payment);
+        }
 
         try
         {
@@ -103,13 +115,19 @@ public class BillingController : Controller
         catch (Exception ex) when (ex is NotFoundException or BusinessRuleException)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            var invoice = await _billingService.GetInvoiceByIdAsync(invoiceId);
-            if (invoice is null)
-            {
-                return NotFound();
-            }
-
-            return View(invoice);
+            return await RedisplayRecordPaymentAsync(invoiceId, payment);
         }
+    }
+
+    /// <summary>Rebuilds the Record Payment form with the submitted values and the current invoice.</summary>
+    private async Task<IActionResult> RedisplayRecordPaymentAsync(int invoiceId, PaymentTransactionDto payment)
+    {
+        var invoice = await _billingService.GetInvoiceByIdAsync(invoiceId);
+        if (invoice is null)
+        {
+            return NotFound();
+        }
+
+        return View("RecordPayment", new RecordPaymentViewModel { Invoice = invoice, Payment = payment });
     }
 }
