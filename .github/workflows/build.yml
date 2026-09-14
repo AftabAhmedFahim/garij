@@ -25,5 +25,11 @@ jobs:
       - name: Build
         run: dotnet build Garij.sln --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test Garij.sln --no-build --configuration Release --verbosity normal
+      - name: Test Unit Tests
+        run: dotnet test tests/Garij.UnitTests/Garij.UnitTests.csproj --no-build --configuration Release --verbosity normal
+
+      - name: Test Integration Tests
+        run: dotnet test tests/Garij.IntegrationTests/Garij.IntegrationTests.csproj --no-build --configuration Release --verbosity normal
+
+      - name: Test General Tests
+        run: dotnet test tests/Garij.Tests/Garij.Tests.csproj --no-build --configuration Release --verbosity normal
