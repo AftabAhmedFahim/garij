@@ -19,4 +19,8 @@ public class PaymentTransactionDto
     public string TransactionReference { get; set; } = string.Empty;
 
     public DateTime PaidAt { get; set; }
+
+    public DateTime? RefundedAt { get; set; }
+
+    public bool IsRefunded => RefundedAt.HasValue;
 }

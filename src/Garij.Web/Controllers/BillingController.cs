@@ -119,6 +119,42 @@ public class BillingController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> RefundPayment(int invoiceId, int paymentId)
+    {
+        var model = await BuildRefundPaymentModelAsync(invoiceId, paymentId);
+        return model is null ? NotFound() : View(model);
+    }
+
+    [HttpPost, ActionName("RefundPayment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RefundPaymentConfirmed(int invoiceId, int paymentId)
+    {
+        try
+        {
+            var refunded = await _billingService.RefundPaymentAsync(invoiceId, paymentId);
+            TempData["SuccessMessage"] = $"Payment of {refunded.Amount:C} refunded. The invoice's outstanding balance has been reopened by that amount.";
+            return RedirectToAction(nameof(Details), new { id = invoiceId });
+        }
+        catch (BusinessRuleException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            var model = await BuildRefundPaymentModelAsync(invoiceId, paymentId);
+            return model is null ? NotFound() : View(model);
+        }
+    }
+
+    /// <summary>The invoice and the payment on it, or null when either does not exist in this garage.</summary>
+    private async Task<RefundPaymentViewModel?> BuildRefundPaymentModelAsync(int invoiceId, int paymentId)
+    {
+        var invoice = await _billingService.GetInvoiceByIdAsync(invoiceId);
+        var payment = invoice?.Payments.FirstOrDefault(p => p.Id == paymentId);
+
+        return invoice is null || payment is null
+            ? null
+            : new RefundPaymentViewModel { Invoice = invoice, Payment = payment };
+    }
+
     /// <summary>Rebuilds the Record Payment form with the submitted values and the current invoice.</summary>
     private async Task<IActionResult> RedisplayRecordPaymentAsync(int invoiceId, PaymentTransactionDto payment)
     {
