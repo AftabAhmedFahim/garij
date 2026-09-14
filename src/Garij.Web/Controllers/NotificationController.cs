@@ -1,5 +1,6 @@
 using Garij.Application.Interfaces;
 using Garij.Domain.Enums;
+using Garij.Domain.Exceptions;
 using Garij.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace Garij.Web.Controllers;
 public class NotificationController : Controller
 {
     private readonly INotificationService _notificationService;
+    private readonly IServiceJobService _serviceJobService;
 
-    public NotificationController(INotificationService notificationService)
+    public NotificationController(INotificationService notificationService, IServiceJobService serviceJobService)
     {
         _notificationService = notificationService;
+        _serviceJobService = serviceJobService;
     }
 
     [HttpGet]
@@ -70,7 +73,26 @@ public class NotificationController : Controller
             return View(rejected);
         }
 
-        await _notificationService.RespondToNotificationAsync(id, status);
+        try
+        {
+            // Through the job service, not the notification service alone: an approval request's
+            // decision has to move the job, and the notification service only records it.
+            await _serviceJobService.RespondToNotificationAsync(id, status);
+        }
+        catch (BusinessRuleException ex)
+        {
+            // The job refused the move (e.g. it was already Completed or Cancelled) or the request
+            // was already answered. Nothing was recorded; say why on the same form.
+            var notification = await _notificationService.GetNotificationByIdAsync(id);
+            if (notification is null)
+            {
+                return NotFound();
+            }
+
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(notification);
+        }
+
         return RedirectToAction(nameof(Index));
     }
 }

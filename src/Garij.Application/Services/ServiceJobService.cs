@@ -1,4 +1,4 @@
-﻿using Garij.Application.DTOs;
+using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Entities;
 using Garij.Domain.Enums;
@@ -182,7 +182,8 @@ public class ServiceJobService : IServiceJobService
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobDto.Id)
             ?? throw new NotFoundException(nameof(ServiceJob), serviceJobDto.Id);
 
-        if (entity.Status != serviceJobDto.Status)
+        var isStatusChanging = entity.Status != serviceJobDto.Status;
+        if (isStatusChanging)
         {
             ValidateStatusTransition(entity.Status, serviceJobDto.Status);
             ValidateCompletionReadiness(entity, serviceJobDto.Status);
@@ -197,6 +198,11 @@ public class ServiceJobService : IServiceJobService
             await NotifyJobCompletedAsync(entity);
         }
 
+        if (isStatusChanging && serviceJobDto.Status == JobStatus.CustomerApprovalNeeded)
+        {
+            await NotifyCustomerApprovalNeededAsync(entity);
+        }
+
         _serviceJobRepository.Update(entity);
         await _serviceJobRepository.SaveChangesAsync();
 
@@ -208,7 +214,8 @@ public class ServiceJobService : IServiceJobService
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(id)
             ?? throw new NotFoundException(nameof(ServiceJob), id);
 
-        if (entity.Status != status)
+        var isStatusChanging = entity.Status != status;
+        if (isStatusChanging)
         {
             ValidateStatusTransition(entity.Status, status);
             ValidateCompletionReadiness(entity, status);
@@ -221,10 +228,50 @@ public class ServiceJobService : IServiceJobService
             await NotifyJobCompletedAsync(entity);
         }
 
+        // Only on the way in: re-saving a job that is already waiting for the customer must not
+        // send them a second request.
+        if (isStatusChanging && status == JobStatus.CustomerApprovalNeeded)
+        {
+            await NotifyCustomerApprovalNeededAsync(entity);
+        }
+
         _serviceJobRepository.Update(entity);
         await _serviceJobRepository.SaveChangesAsync();
 
         return MapToDto(entity);
+    }
+
+    public async Task<NotificationDto> RespondToNotificationAsync(int notificationId, NotificationStatus decision)
+    {
+        if (decision != NotificationStatus.Approved && decision != NotificationStatus.Rejected)
+        {
+            throw new ValidationException(nameof(NotificationDto.Status), "Status must be either Approved or Rejected.");
+        }
+
+        // Garage-scoped lookup: a notification from another garage reads as not found.
+        var notification = await _notificationService.GetNotificationByIdAsync(notificationId)
+            ?? throw new NotFoundException(nameof(Notification), notificationId);
+
+        // A completion notice is informational, so only an approval request acts on the job.
+        if (notification.Type == NotificationType.CustomerApprovalRequest)
+        {
+            // Decided once. Without this a stale second response could run another transition -
+            // rejecting an approval that already started the work would cancel a job mid-repair.
+            if (notification.Status != NotificationStatus.Pending)
+            {
+                throw new BusinessRuleException("BR-014", $"This approval request was already {notification.Status.ToString().ToLowerInvariant()} and cannot be answered again.");
+            }
+
+            var nextStatus = decision == NotificationStatus.Approved ? JobStatus.InProgress : JobStatus.Cancelled;
+
+            // Through the normal status update, so BR-007 still applies: a job that has since
+            // reached Completed or Cancelled refuses the move. Applied before the decision is
+            // recorded, so a refused transition leaves the notification pending as well and the
+            // two cannot disagree.
+            await UpdateServiceJobStatusAsync(notification.ServiceJobId, nextStatus);
+        }
+
+        return await _notificationService.RespondToNotificationAsync(notificationId, decision);
     }
 
     public async Task DeleteServiceJobAsync(int id)
@@ -480,7 +527,19 @@ public class ServiceJobService : IServiceJobService
         await _notificationService.CreateNotificationAsync(new NotificationDto
         {
             ServiceJobId = entity.Id,
-            Message = $"Job {entity.BookingReference} has been completed and is ready for review."
+            Message = $"Job {entity.BookingReference} has been completed and is ready for review.",
+            Type = NotificationType.JobCompleted
+        });
+    }
+
+    private async Task NotifyCustomerApprovalNeededAsync(ServiceJob entity)
+    {
+        await _notificationService.CreateNotificationAsync(new NotificationDto
+        {
+            ServiceJobId = entity.Id,
+            Message = $"Job {entity.BookingReference} needs the customer's approval before work can go ahead. Approve to start the work, or reject to cancel the job.",
+            Type = NotificationType.CustomerApprovalRequest,
+            GarageId = entity.GarageId
         });
     }
 
