@@ -67,8 +67,9 @@ public class ReportController : Controller
     }
 
     [HttpGet]
-    public IActionResult LowStock()
+    public async Task<IActionResult> LowStock()
     {
-        return View();
+        var report = await _reportingService.GetLowStockReportAsync();
+        return View(report);
     }
 }
