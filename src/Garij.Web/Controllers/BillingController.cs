@@ -2,6 +2,7 @@ using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Enums;
 using Garij.Domain.Exceptions;
+using Garij.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,7 +42,10 @@ public class BillingController : Controller
     {
         if (serviceJobId <= 0)
         {
-            return BadRequest();
+            // Surfaced through the shared error view so the refusal keeps the site layout and
+            // explains itself, rather than returning a bare 400 with an empty body.
+            return this.BadRequestView(
+                $"'{serviceJobId}' is not a valid service job number. Open the job you want to bill from the Service Jobs list and generate its invoice from there.");
         }
 
         return View(serviceJobId);
@@ -51,6 +55,14 @@ public class BillingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateConfirmed(int serviceJobId)
     {
+        if (serviceJobId <= 0)
+        {
+            // Same refusal as the GET: there is no job form to redisplay for an id that can
+            // never identify a job, so the shared error view carries the message instead.
+            return this.BadRequestView(
+                $"'{serviceJobId}' is not a valid service job number. Open the job you want to bill from the Service Jobs list and generate its invoice from there.");
+        }
+
         try
         {
             var invoice = await _billingService.GenerateInvoiceAsync(serviceJobId);
