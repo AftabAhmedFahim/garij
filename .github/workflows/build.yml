@@ -30,15 +30,15 @@ jobs:
 
       # Run Unit Tests separately
       - name: Test Unit Tests
-        run: dotnet test tests/Garij.UnitTests/Garij.UnitTests.csproj --no-build --configuration Release --verbosity detailed --logger "trx;LogFileName=unit-tests.trx"
+        run: dotnet test tests/Garij.UnitTests/Garij.UnitTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=unit-tests.trx"
 
       # Run Integration Tests separately
       - name: Test Integration Tests
-        run: dotnet test tests/Garij.IntegrationTests/Garij.IntegrationTests.csproj --no-build --configuration Release --verbosity detailed --logger "trx;LogFileName=integration-tests.trx"
+        run: dotnet test tests/Garij.IntegrationTests/Garij.IntegrationTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=integration-tests.trx"
 
       # Run General Tests separately
       - name: Test General Tests
-        run: dotnet test tests/Garij.Tests/Garij.Tests.csproj --no-build --configuration Release --verbosity detailed --logger "trx;LogFileName=garij-tests.trx"
+        run: dotnet test tests/Garij.Tests/Garij.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=garij-tests.trx"
 
       # Upload test results even if a test fails
       - name: Upload test results
