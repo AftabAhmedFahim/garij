@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
 using Garij.Domain.Enums;
@@ -25,9 +26,9 @@ public class MechanicController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var users = await _userRepository.GetAllAsync();
-        var mechanics = users.Where(u => u.Role == UserRole.Mechanic || u.Role == UserRole.Admin)
-                             .OrderBy(u => u.FullName);
+        var currentUser = await GetCurrentStaffUserAsync();
+        var currentGarageId = currentUser?.GarageId ?? "default-garij-master";
+        var mechanics = await _userRepository.GetMechanicsByGarageIdAsync(currentGarageId);
 
         return View(mechanics);
     }
@@ -140,7 +141,7 @@ public class MechanicController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> JobBoard(int? mechanicId)
+    public async Task<IActionResult> JobBoard(int? mechanicId, JobStatus? status, string? sortBy, string? search)
     {
         var currentUser = await GetCurrentStaffUserAsync();
         
@@ -150,19 +151,13 @@ public class MechanicController : Controller
             mechanicId = currentUser.Id;
         }
 
-        IEnumerable<ServiceJobDto> jobs;
-        if (mechanicId.HasValue && mechanicId.Value > 0)
-        {
-            jobs = await _serviceJobService.GetJobsByMechanicAsync(mechanicId.Value);
-            ViewBag.SelectedMechanicId = mechanicId.Value;
-        }
-        else
-        {
-            jobs = await _serviceJobService.GetAllServiceJobsAsync();
-            ViewBag.SelectedMechanicId = null;
-        }
+        var jobs = await _serviceJobService.GetFilteredServiceJobsAsync(status, mechanicId, sortBy, search);
 
         await PopulateMechanicsDropDownList(mechanicId);
+        ViewBag.SelectedMechanicId = mechanicId;
+        ViewBag.SelectedStatus = status;
+        ViewBag.SelectedSortBy = sortBy ?? "date_desc";
+        ViewBag.SearchTerm = search;
         ViewBag.CurrentStaffUser = currentUser;
 
         return View(jobs);
@@ -170,7 +165,7 @@ public class MechanicController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int serviceJobId, JobStatus newStatus, int? mechanicId)
+    public async Task<IActionResult> UpdateStatus(int serviceJobId, JobStatus newStatus, int? mechanicId, JobStatus? filterStatus = null, string? sortBy = null, string? search = null)
     {
         try
         {
@@ -182,13 +177,29 @@ public class MechanicController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+        return RedirectToAction(nameof(JobBoard), new { mechanicId, status = filterStatus, sortBy, search });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveNotes(int serviceJobId, string diagnosticNotes, int? mechanicId)
+    public async Task<IActionResult> SaveNotes(
+        int serviceJobId,
+        // The job board posts notes as a bare parameter rather than through ServiceJobDto, so
+        // the column's 2000-character limit has to be declared here as well to be enforced.
+        [StringLength(2000, ErrorMessage = "Diagnostic notes cannot exceed 2000 characters.")] string diagnosticNotes,
+        int? mechanicId,
+        JobStatus? filterStatus = null,
+        string? sortBy = null,
+        string? search = null)
     {
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] = string.Join(" ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+            return RedirectToAction(nameof(JobBoard), new { mechanicId, status = filterStatus, sortBy, search });
+        }
+
         try
         {
             await _serviceJobService.SaveDiagnosticNotesAsync(serviceJobId, diagnosticNotes);
@@ -199,29 +210,35 @@ public class MechanicController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(JobBoard), new { mechanicId });
+        return RedirectToAction(nameof(JobBoard), new { mechanicId, status = filterStatus, sortBy, search });
     }
 
     private async Task<Garij.Domain.Entities.User?> GetCurrentStaffUserAsync()
     {
         var email = User.Identity?.Name;
-        if (string.IsNullOrEmpty(email))
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(userId))
         {
             return null;
         }
 
         var users = await _userRepository.GetAllAsync();
-        return users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        return users.FirstOrDefault(u =>
+            (!string.IsNullOrEmpty(userId) && u.IdentityUserId == userId) ||
+            (!string.IsNullOrEmpty(email) && u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)));
     }
 
     private async Task PopulateMechanicsDropDownList(object? selectedMechanic = null)
     {
-        var users = await _userRepository.GetAllAsync();
-        var mechanics = users.Where(u => u.Role == UserRole.Mechanic || u.Role == UserRole.Admin)
+        var currentUser = await GetCurrentStaffUserAsync();
+        var currentGarageId = currentUser?.GarageId ?? "default-garij-master";
+        var mechanicsList = await _userRepository.GetMechanicsByGarageIdAsync(currentGarageId);
+
+        var mechanics = mechanicsList
                              .Select(u => new
                              {
                                  u.Id,
-                                 DisplayText = $"{u.FullName} ({u.Role})"
+                                 DisplayText = u.FullName
                              })
                              .OrderBy(u => u.DisplayText);
 

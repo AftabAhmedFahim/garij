@@ -86,10 +86,42 @@ public class PurchaseController : Controller
 
         string? currentUserId = null;
 
+        var chosenRole = Enum.TryParse<UserRole>(model.AccountRole, true, out var r) ? r : UserRole.Admin;
+
+        string? garageId = null;
+
         // 1. If user is currently signed in
         if (User.Identity != null && User.Identity.IsAuthenticated)
         {
             currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                var authUser = await _userManager.FindByIdAsync(currentUserId);
+                if (authUser != null)
+                {
+                    var authRoles = await _userManager.GetRolesAsync(authUser);
+                    if (!authRoles.Contains(chosenRole.ToString()))
+                    {
+                        await _userManager.AddToRoleAsync(authUser, chosenRole.ToString());
+                        await _signInManager.RefreshSignInAsync(authUser);
+                    }
+                    var staffMember = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == authUser.Id);
+                    if (staffMember != null)
+                    {
+                        staffMember.Role = chosenRole;
+                        if (string.IsNullOrEmpty(staffMember.GarageId))
+                        {
+                            staffMember.GarageId = $"GRG-{authUser.Id[..8].ToUpperInvariant()}";
+                        }
+                        garageId = staffMember.GarageId;
+                        await _context.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        garageId = $"GRG-{authUser.Id[..8].ToUpperInvariant()}";
+                    }
+                }
+            }
         }
         else
         {
@@ -100,6 +132,28 @@ public class PurchaseController : Controller
             if (existingUser != null)
             {
                 currentUserId = existingUser.Id;
+                // Update role to chosen role if not assigned
+                var existingRoles = await _userManager.GetRolesAsync(existingUser);
+                if (!existingRoles.Contains(chosenRole.ToString()))
+                {
+                    await _userManager.AddToRoleAsync(existingUser, chosenRole.ToString());
+                }
+                var staffMember = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == existingUser.Id || s.Email == normalizedEmail);
+                if (staffMember != null)
+                {
+                    staffMember.Role = chosenRole;
+                    if (string.IsNullOrEmpty(staffMember.GarageId))
+                    {
+                        staffMember.GarageId = $"GRG-{existingUser.Id[..8].ToUpperInvariant()}";
+                    }
+                    garageId = staffMember.GarageId;
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    garageId = $"GRG-{existingUser.Id[..8].ToUpperInvariant()}";
+                }
+
                 // Sign in if password is valid
                 if (!string.IsNullOrWhiteSpace(model.Password))
                 {
@@ -108,7 +162,7 @@ public class PurchaseController : Controller
             }
             else
             {
-                // Create a new user account for the buyer
+                // Create a new user account for the buyer with their selected role
                 var password = string.IsNullOrWhiteSpace(model.Password) ? "Garij@2026!" : model.Password;
                 var newUser = new IdentityUser
                 {
@@ -120,14 +174,17 @@ public class PurchaseController : Controller
                 var createResult = await _userManager.CreateAsync(newUser, password);
                 if (createResult.Succeeded)
                 {
-                    await _userManager.AddToRoleAsync(newUser, UserRole.FrontDesk.ToString());
+                    await _userManager.AddToRoleAsync(newUser, chosenRole.ToString());
+
+                    garageId = $"GRG-{newUser.Id[..8].ToUpperInvariant()}";
 
                     _context.StaffUsers.Add(new User
                     {
                         IdentityUserId = newUser.Id,
                         FullName = model.BuyerName,
                         Email = normalizedEmail,
-                        Role = UserRole.FrontDesk,
+                        Role = chosenRole,
+                        GarageId = garageId,
                         CreatedAt = DateTime.UtcNow
                     });
                     await _context.SaveChangesAsync();
@@ -138,6 +195,7 @@ public class PurchaseController : Controller
             }
         }
 
+        model.GarageId = garageId;
         var result = await _purchaseService.ProcessPurchaseAsync(model, currentUserId);
         if (result.Success && result.Purchase != null)
         {

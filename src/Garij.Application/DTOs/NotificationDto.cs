@@ -10,9 +10,13 @@ public class NotificationDto
 
     public string Message { get; set; } = string.Empty;
 
+    public NotificationType Type { get; set; } = NotificationType.JobCompleted;
+
     public NotificationStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? RespondedAt { get; set; }
+
+    public string? GarageId { get; set; }
 }

@@ -1,4 +1,4 @@
-@model Garij.Application.DTOs.ServiceJobDto
+﻿@model Garij.Application.DTOs.ServiceJobDto
 @using Garij.Domain.Enums
 
 @{
@@ -33,7 +33,10 @@
                     </div>
                     <div class="col-md-6 app-form-group">
                         <label asp-for="Status" class="app-form-label">Initial Status</label>
-                        <select asp-for="Status" asp-items="Html.GetEnumSelectList<JobStatus>()" class="app-form-select"></select>
+                        <select asp-for="Status" class="app-form-select">
+                            <option value="@JobStatus.Requested">@JobStatus.Requested</option>
+                        </select>
+                        <div class="app-page-subtitle small mt-1">Every new job opens as Requested. Advance it from the job's detail page.</div>
                         <span asp-validation-for="Status" class="app-field-error"></span>
                     </div>
                 </div>
@@ -45,8 +48,11 @@
                     <span asp-validation-for="BookingReference" class="app-field-error"></span>
                 </div>
 
+                @await Html.PartialAsync("_IntakeAssistantPartial")
+
                 <div class="app-form-group">
                     <label asp-for="DiagnosticNotes" class="app-form-label">Diagnostic / Customer Notes</label>
+
                     <textarea asp-for="DiagnosticNotes" class="app-form-control" rows="4" placeholder="Describe customer requests or initial diagnostic observations..."></textarea>
                     <span asp-validation-for="DiagnosticNotes" class="app-field-error"></span>
                 </div>

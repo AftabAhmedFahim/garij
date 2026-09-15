@@ -9,6 +9,9 @@ public interface IServiceJobService
 
     Task<IEnumerable<ServiceJobDto>> GetServiceJobsByStatusAsync(JobStatus status);
 
+    Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null)
+        => GetAllServiceJobsAsync();
+
     Task<ServiceJobDto?> GetServiceJobByIdAsync(int id);
 
     Task<ServiceJobDto?> GetServiceJobByBookingReferenceAsync(string bookingReference);
@@ -18,6 +21,14 @@ public interface IServiceJobService
     Task<ServiceJobDto> UpdateServiceJobAsync(ServiceJobDto serviceJob);
 
     Task<ServiceJobDto> UpdateServiceJobStatusAsync(int id, JobStatus status);
+
+    /// <summary>
+    /// Records an Approved/Rejected decision on a notification and applies its effect on the job.
+    /// For a customer approval request, approving moves the job to InProgress and rejecting moves
+    /// it to Cancelled, both through the normal status transition rules. A completion notification
+    /// only records the decision.
+    /// </summary>
+    Task<NotificationDto> RespondToNotificationAsync(int notificationId, NotificationStatus decision);
 
     Task DeleteServiceJobAsync(int id);
 

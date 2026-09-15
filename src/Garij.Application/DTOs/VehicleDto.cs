@@ -34,6 +34,10 @@ public class VehicleDto
     [Display(Name = "VIN")]
     public string Vin { get; set; } = string.Empty;
 
-    [StringLength(50)]
+    // Mirrors VehicleConfiguration's HasMaxLength(50) on the Color column: the previous 500
+    // here let a value through validation that the column cannot store.
+    [StringLength(50, ErrorMessage = "Colour cannot exceed 50 characters.")]
     public string Color { get; set; } = string.Empty;
+
+    public string? GarageId { get; set; }
 }

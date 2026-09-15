@@ -105,6 +105,8 @@ public class BillingTransactionTests
 
         public Task<IEnumerable<ServiceJobDto>> GetServiceJobsByStatusAsync(JobStatus status) => throw new NotImplementedException();
 
+        public Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null) => throw new NotImplementedException();
+
         public Task<ServiceJobDto?> GetServiceJobByIdAsync(int id) => throw new NotImplementedException();
 
         public Task<ServiceJobDto?> GetServiceJobByBookingReferenceAsync(string bookingReference) => throw new NotImplementedException();
@@ -126,5 +128,7 @@ public class BillingTransactionTests
         public Task<IEnumerable<ServiceJobDto>> GetJobsByMechanicAsync(int mechanicUserId) => throw new NotImplementedException();
 
         public Task<ServiceJobDto> SaveDiagnosticNotesAsync(int serviceJobId, string notes) => throw new NotImplementedException();
+
+        public Task<NotificationDto> RespondToNotificationAsync(int notificationId, NotificationStatus decision) => throw new NotImplementedException();
     }
 }

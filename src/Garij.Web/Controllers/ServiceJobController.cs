@@ -1,8 +1,13 @@
+﻿using System.Security.Claims;
 using Garij.Application.DTOs;
 using Garij.Application.Interfaces;
+using Garij.Domain.Entities;
 using Garij.Domain.Enums;
+using Garij.Infrastructure.Persistence;
 using Garij.Infrastructure.Repositories;
+using Garij.Web.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -12,30 +17,46 @@ namespace Garij.Web.Controllers;
 public class ServiceJobController : Controller
 {
     private readonly IServiceJobService _serviceJobService;
+    private readonly IJobServiceDetailService _jobServiceDetailService;
     private readonly IVehicleRepository _vehicleRepository;
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly GarijDbContext _context;
 
     public ServiceJobController(
         IServiceJobService serviceJobService,
-        IVehicleRepository vehicleRepository)
+        IJobServiceDetailService jobServiceDetailService,
+        IVehicleRepository vehicleRepository,
+        UserManager<IdentityUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        GarijDbContext context)
     {
         _serviceJobService = serviceJobService;
+        _jobServiceDetailService = jobServiceDetailService;
         _vehicleRepository = vehicleRepository;
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _context = context;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(JobStatus? status)
+    public async Task<IActionResult> Index(JobStatus? status, int? mechanicId, string? sortBy, string? search)
     {
-        IEnumerable<ServiceJobDto> jobs;
-        if (status.HasValue)
-        {
-            jobs = await _serviceJobService.GetServiceJobsByStatusAsync(status.Value);
-            ViewBag.SelectedStatus = status.Value;
-        }
-        else
-        {
-            jobs = await _serviceJobService.GetAllServiceJobsAsync();
-            ViewBag.SelectedStatus = null;
-        }
+        var jobs = await _serviceJobService.GetFilteredServiceJobsAsync(status, mechanicId, sortBy, search);
+
+        var currentGarageId = GetCurrentGarageId();
+
+        var mechanics = _context.StaffUsers
+            .Where(u => u.Role == UserRole.Mechanic && (u.GarageId ?? "default-garij-master") == currentGarageId)
+            .OrderBy(u => u.FullName)
+            .Select(u => new { u.Id, u.FullName })
+            .ToList();
+
+        ViewBag.Mechanics = new SelectList(mechanics, "Id", "FullName", mechanicId);
+        ViewBag.SelectedStatus = status;
+        ViewBag.SelectedMechanicId = mechanicId;
+        ViewBag.SelectedSortBy = sortBy ?? "date_desc";
+        ViewBag.SearchTerm = search;
 
         return View(jobs);
     }
@@ -137,6 +158,86 @@ public class ServiceJobController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> LogService(int serviceJobId)
+    {
+        var job = await _serviceJobService.GetServiceJobByIdAsync(serviceJobId);
+        if (job is null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.ServiceJob = job;
+        await PopulateServiceCatalogDropDownList();
+
+        return View(new JobServiceDetailDto { ServiceJobId = serviceJobId, Quantity = 1 });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LogService(JobServiceDetailDto model)
+    {
+        if (model.ServiceCatalogId <= 0)
+        {
+            ModelState.AddModelError(nameof(model.ServiceCatalogId), "Please select a service.");
+        }
+
+        if (model.Quantity <= 0)
+        {
+            ModelState.AddModelError(nameof(model.Quantity), "Quantity must be at least 1.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ServiceJob = await _serviceJobService.GetServiceJobByIdAsync(model.ServiceJobId);
+            await PopulateServiceCatalogDropDownList(model.ServiceCatalogId);
+            return View(model);
+        }
+
+        try
+        {
+            await _jobServiceDetailService.LogJobServiceAsync(model);
+            TempData["SuccessMessage"] = "Service (labour) added to the job.";
+            return RedirectToAction(nameof(Details), new { id = model.ServiceJobId });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            ViewBag.ServiceJob = await _serviceJobService.GetServiceJobByIdAsync(model.ServiceJobId);
+            await PopulateServiceCatalogDropDownList(model.ServiceCatalogId);
+            return View(model);
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveService(int id, int serviceJobId)
+    {
+        try
+        {
+            await _jobServiceDetailService.RemoveJobServiceAsync(id);
+            TempData["SuccessMessage"] = "Service removed from the job.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Details), new { id = serviceJobId });
+    }
+
+    private async Task PopulateServiceCatalogDropDownList(object? selectedService = null)
+    {
+        var catalogue = await _jobServiceDetailService.GetServiceCatalogAsync();
+        var catalogueList = catalogue.Select(c => new
+        {
+            c.Id,
+            DisplayText = $"{c.Name} - {c.BasePrice:C} ({c.EstimatedDurationMinutes} min)"
+        }).ToList();
+
+        ViewBag.ServiceCatalogue = new SelectList(catalogueList, "Id", "DisplayText", selectedService);
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
         var job = await _serviceJobService.GetServiceJobByIdAsync(id);
@@ -165,15 +266,123 @@ public class ServiceJobController : Controller
         }
     }
 
+    private string GetCurrentGarageId()
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+        var currentStaff = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == currentUserId || (currentUserEmail != null && s.Email == currentUserEmail));
+        return currentStaff?.GarageId ?? "default-garij-master";
+    }
+
     private async Task PopulateVehiclesDropDownList(object? selectedVehicle = null)
     {
+        var currentGarageId = GetCurrentGarageId();
         var vehicles = await _vehicleRepository.GetAllWithCustomersAsync();
-        var vehicleList = vehicles.Select(v => new
-        {
-            v.Id,
-            DisplayText = $"{v.LicensePlateNumber} - {v.Year} {v.Make} {v.Model} (Owner: {v.Customer?.FullName ?? "Unknown"})"
-        }).OrderBy(v => v.DisplayText);
+        var vehicleList = vehicles
+            .Where(v => (v.GarageId ?? "default-garij-master") == currentGarageId)
+            .Select(v => new
+            {
+                v.Id,
+                DisplayText = $"{v.LicensePlateNumber} - {v.Year} {v.Make} {v.Model} (Owner: {v.Customer?.FullName ?? "Unknown"})"
+            }).OrderBy(v => v.DisplayText);
 
         ViewBag.Vehicles = new SelectList(vehicleList, "Id", "DisplayText", selectedVehicle);
     }
+
+    [Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.FrontDesk))]
+    [HttpGet]
+    public IActionResult AddEmployee()
+    {
+        return View(new CreateStaffUserViewModel());
+    }
+
+    [Authorize(Roles = nameof(UserRole.Admin) + "," + nameof(UserRole.FrontDesk))]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddEmployee(CreateStaffUserViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var normalizedEmail = model.Email.Trim().ToLowerInvariant();
+
+        // Check if user already exists
+        var existingUser = await _userManager.FindByEmailAsync(normalizedEmail);
+        if (existingUser != null)
+        {
+            ModelState.AddModelError(nameof(model.Email), $"An account with email '{model.Email}' already exists.");
+            return View(model);
+        }
+
+        var identityUser = new IdentityUser
+        {
+            UserName = normalizedEmail,
+            Email = normalizedEmail,
+            PhoneNumber = model.PhoneNumber,
+            EmailConfirmed = true
+        };
+
+        var createResult = await _userManager.CreateAsync(identityUser, model.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var error in createResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View(model);
+        }
+
+        // Ensure role exists in Identity
+        var roleName = model.Role.ToString();
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+
+        await _userManager.AddToRoleAsync(identityUser, roleName);
+
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+        var currentStaff = _context.StaffUsers.FirstOrDefault(s => s.IdentityUserId == currentUserId || (currentUserEmail != null && s.Email == currentUserEmail));
+        var currentGarageId = currentStaff?.GarageId ?? "default-garij-master";
+
+        // Add to StaffUsers table
+        _context.StaffUsers.Add(new User
+        {
+            IdentityUserId = identityUser.Id,
+            FullName = model.FullName.Trim(),
+            Email = normalizedEmail,
+            PhoneNumber = model.PhoneNumber.Trim(),
+            Role = model.Role,
+            GarageId = currentGarageId,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Grant the workshop staff member license access under the workshop's ownership
+        var licenseSlug = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+        _context.ProjectPurchases.Add(new ProjectPurchase
+        {
+            LicenseKey = $"GRJ-LIC-STAFF-{licenseSlug}",
+            IdentityUserId = identityUser.Id,
+            BuyerName = model.FullName.Trim(),
+            BuyerEmail = normalizedEmail,
+            WorkshopName = "Workshop Staff Member",
+            GarageId = currentGarageId,
+            Amount = 0m,
+            Currency = "USD",
+            PaymentMethod = "GarageOwnerCreatedStaff",
+            TransactionReference = $"TXN-STAFF-{licenseSlug}",
+            PurchasedAt = DateTime.UtcNow,
+            Status = LicenseStatus.Active,
+            IsActive = true
+        });
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Garage employee '{model.FullName}' was created successfully as {model.Role}! They can now log in with '{normalizedEmail}'.";
+        return RedirectToAction(nameof(Index));
+    }
 }
+

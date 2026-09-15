@@ -15,6 +15,18 @@ public static class StatusBadgeHelper
         _ => "app-badge-neutral"
     };
 
+    /// <summary>Readable label for a job stage, for use in menus and buttons.</summary>
+    public static string DisplayName(JobStatus status) => status switch
+    {
+        JobStatus.Requested => "Requested",
+        JobStatus.InspectionPending => "Inspection",
+        JobStatus.CustomerApprovalNeeded => "Customer Approval",
+        JobStatus.InProgress => "In Progress",
+        JobStatus.Completed => "Completed",
+        JobStatus.Cancelled => "Cancelled",
+        _ => status.ToString()
+    };
+
     public static string BadgeClass(NotificationStatus status) => status switch
     {
         NotificationStatus.Pending => "app-badge-warning",

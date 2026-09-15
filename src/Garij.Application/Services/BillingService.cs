@@ -19,6 +19,7 @@ public class BillingService : IBillingService
     private readonly IPaymentTransactionRepository _paymentTransactionRepository;
     private readonly IServiceJobRepository _serviceJobRepository;
     private readonly IServiceJobService _serviceJobService;
+    private readonly ICurrentGarageService? _currentGarageService;
     private readonly decimal _taxRatePercent;
 
     public BillingService(
@@ -27,14 +28,35 @@ public class BillingService : IBillingService
         IPaymentTransactionRepository paymentTransactionRepository,
         IServiceJobRepository serviceJobRepository,
         IServiceJobService serviceJobService,
-        IOptions<BillingSettings> billingSettings)
+        IOptions<BillingSettings> billingSettings,
+        ICurrentGarageService? currentGarageService = null)
     {
         _context = context;
         _invoiceRepository = invoiceRepository;
         _paymentTransactionRepository = paymentTransactionRepository;
         _serviceJobRepository = serviceJobRepository;
         _serviceJobService = serviceJobService;
+        _currentGarageService = currentGarageService;
         _taxRatePercent = billingSettings.Value.TaxRatePercent;
+    }
+
+    private async Task<string> ResolveGarageIdAsync(string? explicitGarageId = null)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitGarageId))
+        {
+            return explicitGarageId;
+        }
+
+        if (_currentGarageService != null)
+        {
+            var id = await _currentGarageService.GetCurrentGarageIdAsync();
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                return id;
+            }
+        }
+
+        return "default-garij-master";
     }
 
     /// <summary>
@@ -113,8 +135,14 @@ public class BillingService : IBillingService
     /// </summary>
     public async Task<InvoiceDto> GenerateInvoiceAsync(int serviceJobId)
     {
+        var garageId = await ResolveGarageIdAsync();
         var job = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobId)
             ?? throw new NotFoundException(nameof(ServiceJob), serviceJobId);
+
+        if ((job.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(ServiceJob), serviceJobId);
+        }
 
         await EnsureNotAlreadyInvoicedAsync(serviceJobId);
         EnsureHasLineItems(job);
@@ -124,6 +152,7 @@ public class BillingService : IBillingService
 
         var invoice = new Invoice
         {
+            GarageId = garageId,
             ServiceJobId = serviceJobId,
             InvoiceNumber = invoiceNumber,
             SubTotal = subTotal,
@@ -154,14 +183,21 @@ public class BillingService : IBillingService
 
     public async Task<InvoiceDto?> GetInvoiceByIdAsync(int id)
     {
+        var garageId = await ResolveGarageIdAsync();
         var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(id);
-        return invoice is null ? null : await MapToDetailedDtoAsync(invoice);
+        if (invoice is null || (invoice.GarageId ?? "default-garij-master") != garageId)
+        {
+            return null;
+        }
+
+        return await MapToDetailedDtoAsync(invoice);
     }
 
     public async Task<InvoiceDto?> GetInvoiceByServiceJobAsync(int serviceJobId)
     {
+        var garageId = await ResolveGarageIdAsync();
         var invoice = await _invoiceRepository.GetByServiceJobIdAsync(serviceJobId);
-        if (invoice is null)
+        if (invoice is null || (invoice.GarageId ?? "default-garij-master") != garageId)
         {
             return null;
         }
@@ -172,8 +208,11 @@ public class BillingService : IBillingService
 
     public async Task<IEnumerable<InvoiceDto>> GetAllInvoicesAsync()
     {
+        var garageId = await ResolveGarageIdAsync();
         var invoices = await _invoiceRepository.GetAllAsync();
-        return invoices.Select(MapToSummaryDto);
+        return invoices
+            .Where(i => (i.GarageId ?? "default-garij-master") == garageId)
+            .Select(MapToSummaryDto);
     }
 
     /// <summary>
@@ -188,10 +227,16 @@ public class BillingService : IBillingService
             throw new BusinessRuleException("BR-012", "Payment amount must be greater than zero.");
         }
 
+        var garageId = await ResolveGarageIdAsync();
         var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(payment.InvoiceId)
             ?? throw new NotFoundException(nameof(Invoice), payment.InvoiceId);
 
-        var amountPaidSoFar = invoice.PaymentTransactions.Sum(p => p.Amount);
+        if ((invoice.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(Invoice), payment.InvoiceId);
+        }
+
+        var amountPaidSoFar = AmountStillPaid(invoice);
         var outstanding = invoice.TotalAmount - amountPaidSoFar;
 
         if (payment.Amount > outstanding)
@@ -210,12 +255,7 @@ public class BillingService : IBillingService
             PaidAt = DateTime.UtcNow
         };
 
-        var newAmountPaid = amountPaidSoFar + payment.Amount;
-        invoice.PaymentStatus = newAmountPaid == invoice.TotalAmount
-            ? PaymentStatus.Paid
-            : newAmountPaid > 0
-                ? PaymentStatus.PartiallyPaid
-                : PaymentStatus.Pending;
+        invoice.PaymentStatus = PaymentStatusFor(amountPaidSoFar + payment.Amount, invoice.TotalAmount);
 
         await _paymentTransactionRepository.AddAsync(entity);
         _invoiceRepository.Update(invoice);
@@ -224,10 +264,55 @@ public class BillingService : IBillingService
         return MapPaymentToDto(entity);
     }
 
-    public async Task<IEnumerable<PaymentTransactionDto>> GetPaymentsByInvoiceAsync(int invoiceId)
+    /// <summary>
+    /// Refunds a recorded payment in full. The payment row is kept and stamped with RefundedAt -
+    /// never deleted, and never offset by a negative row, which CK_PaymentTransaction_Amount forbids -
+    /// so the payment history still shows it. PaymentStatus is then recomputed from the payments still
+    /// standing, the same way RecordPaymentAsync does, which reopens the outstanding balance.
+    /// </summary>
+    public async Task<PaymentTransactionDto> RefundPaymentAsync(int invoiceId, int paymentId)
     {
+        var garageId = await ResolveGarageIdAsync();
         var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(invoiceId)
             ?? throw new NotFoundException(nameof(Invoice), invoiceId);
+
+        if ((invoice.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(Invoice), invoiceId);
+        }
+
+        // Found through the invoice, so only a payment actually recorded against this invoice can be
+        // refunded; an id belonging to another invoice reads as not found.
+        var payment = invoice.PaymentTransactions.FirstOrDefault(p => p.Id == paymentId)
+            ?? throw new NotFoundException(nameof(PaymentTransaction), paymentId);
+
+        if (payment.IsRefunded)
+        {
+            throw new BusinessRuleException(
+                "BR-013",
+                $"The payment of {payment.Amount:0.00} on invoice '{invoice.InvoiceNumber}' was already refunded on {payment.RefundedAt:yyyy-MM-dd}.");
+        }
+
+        payment.RefundedAt = DateTime.UtcNow;
+        invoice.PaymentStatus = PaymentStatusFor(AmountStillPaid(invoice), invoice.TotalAmount);
+
+        _paymentTransactionRepository.Update(payment);
+        _invoiceRepository.Update(invoice);
+        await _paymentTransactionRepository.SaveChangesAsync();
+
+        return MapPaymentToDto(payment);
+    }
+
+    public async Task<IEnumerable<PaymentTransactionDto>> GetPaymentsByInvoiceAsync(int invoiceId)
+    {
+        var garageId = await ResolveGarageIdAsync();
+        var invoice = await _invoiceRepository.GetByIdWithPaymentsAsync(invoiceId)
+            ?? throw new NotFoundException(nameof(Invoice), invoiceId);
+
+        if ((invoice.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(Invoice), invoiceId);
+        }
 
         return invoice.PaymentTransactions.OrderBy(p => p.PaidAt).Select(MapPaymentToDto);
     }
@@ -257,11 +342,13 @@ public class BillingService : IBillingService
             .OrderBy(p => p.PaidAt)
             .Select(MapPaymentToDto)
             .ToList();
-        var amountPaid = payments.Sum(p => p.Amount);
+        var amountPaid = payments.Where(p => !p.IsRefunded).Sum(p => p.Amount);
+        var amountRefunded = payments.Where(p => p.IsRefunded).Sum(p => p.Amount);
 
         return new InvoiceDto
         {
             Id = invoice.Id,
+            GarageId = invoice.GarageId,
             ServiceJobId = invoice.ServiceJobId,
             InvoiceNumber = invoice.InvoiceNumber,
             SubTotal = invoice.SubTotal,
@@ -276,6 +363,7 @@ public class BillingService : IBillingService
             PartLines = partLines,
             Payments = payments,
             AmountPaid = amountPaid,
+            AmountRefunded = amountRefunded,
             OutstandingBalance = invoice.TotalAmount - amountPaid
         };
     }
@@ -284,6 +372,7 @@ public class BillingService : IBillingService
     private static InvoiceDto MapToSummaryDto(Invoice invoice) => new()
     {
         Id = invoice.Id,
+        GarageId = invoice.GarageId,
         ServiceJobId = invoice.ServiceJobId,
         InvoiceNumber = invoice.InvoiceNumber,
         SubTotal = invoice.SubTotal,
@@ -300,6 +389,18 @@ public class BillingService : IBillingService
         Amount = payment.Amount,
         PaymentMethod = payment.PaymentMethod,
         TransactionReference = payment.TransactionReference,
-        PaidAt = payment.PaidAt
+        PaidAt = payment.PaidAt,
+        RefundedAt = payment.RefundedAt
     };
+
+    /// <summary>What has been paid and not refunded - the figure the balance and the status are based on.</summary>
+    private static decimal AmountStillPaid(Invoice invoice) =>
+        invoice.PaymentTransactions.Where(p => !p.IsRefunded).Sum(p => p.Amount);
+
+    private static PaymentStatus PaymentStatusFor(decimal amountPaid, decimal totalAmount) =>
+        amountPaid == totalAmount
+            ? PaymentStatus.Paid
+            : amountPaid > 0
+                ? PaymentStatus.PartiallyPaid
+                : PaymentStatus.Pending;
 }

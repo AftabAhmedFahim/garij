@@ -14,37 +14,111 @@ public class ServiceJobService : IServiceJobService
     private readonly IUserRepository _userRepository;
     private readonly IMechanicAssignmentRepository _mechanicAssignmentRepository;
     private readonly INotificationService _notificationService;
+    private readonly ICurrentGarageService? _currentGarageService;
 
     public ServiceJobService(
         IServiceJobRepository serviceJobRepository,
         IVehicleRepository vehicleRepository,
         IUserRepository userRepository,
         IMechanicAssignmentRepository mechanicAssignmentRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ICurrentGarageService? currentGarageService = null)
     {
         _serviceJobRepository = serviceJobRepository;
         _vehicleRepository = vehicleRepository;
         _userRepository = userRepository;
         _mechanicAssignmentRepository = mechanicAssignmentRepository;
         _notificationService = notificationService;
+        _currentGarageService = currentGarageService;
+    }
+
+    private async Task<string> ResolveGarageIdAsync(string? explicitGarageId = null)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitGarageId))
+        {
+            return explicitGarageId;
+        }
+
+        if (_currentGarageService != null)
+        {
+            var id = await _currentGarageService.GetCurrentGarageIdAsync();
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                return id;
+            }
+        }
+
+        return "default-garij-master";
     }
 
     public async Task<IEnumerable<ServiceJobDto>> GetAllServiceJobsAsync()
     {
+        var garageId = await ResolveGarageIdAsync();
         var jobs = await _serviceJobRepository.GetAllWithDetailsAsync();
-        return jobs.Select(MapToDto);
+        return jobs
+            .Where(j => (j.GarageId ?? "default-garij-master") == garageId)
+            .Select(MapToDto);
     }
 
     public async Task<IEnumerable<ServiceJobDto>> GetServiceJobsByStatusAsync(JobStatus status)
     {
+        var garageId = await ResolveGarageIdAsync();
         var jobs = await _serviceJobRepository.GetJobsByStatusAsync(status);
-        return jobs.Select(MapToDto);
+        return jobs
+            .Where(j => (j.GarageId ?? "default-garij-master") == garageId)
+            .Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<ServiceJobDto>> GetFilteredServiceJobsAsync(JobStatus? status = null, int? mechanicId = null, string? sortBy = null, string? searchTerm = null)
+    {
+        var garageId = await ResolveGarageIdAsync();
+        var jobs = await _serviceJobRepository.GetAllWithDetailsAsync();
+        jobs = jobs.Where(j => (j.GarageId ?? "default-garij-master") == garageId);
+
+        if (status.HasValue)
+        {
+            jobs = jobs.Where(j => j.Status == status.Value);
+        }
+
+        if (mechanicId.HasValue && mechanicId.Value > 0)
+        {
+            jobs = jobs.Where(j => j.MechanicAssignments != null && j.MechanicAssignments.Any(ma => ma.UserId == mechanicId.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            jobs = jobs.Where(j =>
+                j.BookingReference.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                (j.Vehicle != null && j.Vehicle.LicensePlateNumber.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                (j.Customer != null && j.Customer.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                (j.Vehicle != null && (j.Vehicle.Make.Contains(term, StringComparison.OrdinalIgnoreCase) || j.Vehicle.Model.Contains(term, StringComparison.OrdinalIgnoreCase))));
+        }
+
+        var dtos = jobs.Select(MapToDto);
+
+        dtos = sortBy?.ToLowerInvariant() switch
+        {
+            "date_asc" => dtos.OrderBy(j => j.CreatedAt),
+            "date_desc" => dtos.OrderByDescending(j => j.CreatedAt),
+            "status" => dtos.OrderBy(j => j.Status).ThenByDescending(j => j.CreatedAt),
+            "plate" => dtos.OrderBy(j => j.VehiclePlateNumber),
+            _ => dtos.OrderByDescending(j => j.CreatedAt)
+        };
+
+        return dtos.ToList();
     }
 
     public async Task<ServiceJobDto?> GetServiceJobByIdAsync(int id)
     {
+        var garageId = await ResolveGarageIdAsync();
         var job = await _serviceJobRepository.GetByIdWithDetailsAsync(id);
-        return job is null ? null : MapToDto(job);
+        if (job is null || (job.GarageId ?? "default-garij-master") != garageId)
+        {
+            return null;
+        }
+
+        return MapToDto(job);
     }
 
     public async Task<ServiceJobDto?> GetServiceJobByBookingReferenceAsync(string bookingReference)
@@ -61,8 +135,14 @@ public class ServiceJobService : IServiceJobService
 
     public async Task<ServiceJobDto> CreateServiceJobAsync(ServiceJobDto serviceJobDto)
     {
+        var garageId = await ResolveGarageIdAsync(serviceJobDto.GarageId);
         var vehicle = await _vehicleRepository.GetByIdWithCustomerAsync(serviceJobDto.VehicleId)
             ?? throw new NotFoundException(nameof(Vehicle), serviceJobDto.VehicleId);
+
+        if ((vehicle.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(Vehicle), serviceJobDto.VehicleId);
+        }
 
         string bookingRef = serviceJobDto.BookingReference;
         if (string.IsNullOrWhiteSpace(bookingRef))
@@ -84,9 +164,10 @@ public class ServiceJobService : IServiceJobService
             CustomerId = vehicle.CustomerId,
             BookingReference = bookingRef,
             JobType = serviceJobDto.JobType,
-            Status = serviceJobDto.Status == 0 ? JobStatus.Requested : serviceJobDto.Status,
+            Status = ValidateInitialStatus(serviceJobDto.Status),
             DiagnosticNotes = serviceJobDto.DiagnosticNotes?.Trim(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            GarageId = garageId
         };
 
         await _serviceJobRepository.AddAsync(entity);
@@ -101,9 +182,11 @@ public class ServiceJobService : IServiceJobService
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(serviceJobDto.Id)
             ?? throw new NotFoundException(nameof(ServiceJob), serviceJobDto.Id);
 
-        if (entity.Status != serviceJobDto.Status)
+        var isStatusChanging = entity.Status != serviceJobDto.Status;
+        if (isStatusChanging)
         {
             ValidateStatusTransition(entity.Status, serviceJobDto.Status);
+            ValidateCompletionReadiness(entity, serviceJobDto.Status);
         }
 
         entity.JobType = serviceJobDto.JobType;
@@ -113,6 +196,11 @@ public class ServiceJobService : IServiceJobService
         {
             entity.CompletedAt = DateTime.UtcNow;
             await NotifyJobCompletedAsync(entity);
+        }
+
+        if (isStatusChanging && serviceJobDto.Status == JobStatus.CustomerApprovalNeeded)
+        {
+            await NotifyCustomerApprovalNeededAsync(entity);
         }
 
         _serviceJobRepository.Update(entity);
@@ -126,9 +214,11 @@ public class ServiceJobService : IServiceJobService
         var entity = await _serviceJobRepository.GetByIdWithDetailsAsync(id)
             ?? throw new NotFoundException(nameof(ServiceJob), id);
 
-        if (entity.Status != status)
+        var isStatusChanging = entity.Status != status;
+        if (isStatusChanging)
         {
             ValidateStatusTransition(entity.Status, status);
+            ValidateCompletionReadiness(entity, status);
         }
 
         entity.Status = status;
@@ -138,10 +228,50 @@ public class ServiceJobService : IServiceJobService
             await NotifyJobCompletedAsync(entity);
         }
 
+        // Only on the way in: re-saving a job that is already waiting for the customer must not
+        // send them a second request.
+        if (isStatusChanging && status == JobStatus.CustomerApprovalNeeded)
+        {
+            await NotifyCustomerApprovalNeededAsync(entity);
+        }
+
         _serviceJobRepository.Update(entity);
         await _serviceJobRepository.SaveChangesAsync();
 
         return MapToDto(entity);
+    }
+
+    public async Task<NotificationDto> RespondToNotificationAsync(int notificationId, NotificationStatus decision)
+    {
+        if (decision != NotificationStatus.Approved && decision != NotificationStatus.Rejected)
+        {
+            throw new ValidationException(nameof(NotificationDto.Status), "Status must be either Approved or Rejected.");
+        }
+
+        // Garage-scoped lookup: a notification from another garage reads as not found.
+        var notification = await _notificationService.GetNotificationByIdAsync(notificationId)
+            ?? throw new NotFoundException(nameof(Notification), notificationId);
+
+        // A completion notice is informational, so only an approval request acts on the job.
+        if (notification.Type == NotificationType.CustomerApprovalRequest)
+        {
+            // Decided once. Without this a stale second response could run another transition -
+            // rejecting an approval that already started the work would cancel a job mid-repair.
+            if (notification.Status != NotificationStatus.Pending)
+            {
+                throw new BusinessRuleException("BR-014", $"This approval request was already {notification.Status.ToString().ToLowerInvariant()} and cannot be answered again.");
+            }
+
+            var nextStatus = decision == NotificationStatus.Approved ? JobStatus.InProgress : JobStatus.Cancelled;
+
+            // Through the normal status update, so BR-007 still applies: a job that has since
+            // reached Completed or Cancelled refuses the move. Applied before the decision is
+            // recorded, so a refused transition leaves the notification pending as well and the
+            // two cannot disagree.
+            await UpdateServiceJobStatusAsync(notification.ServiceJobId, nextStatus);
+        }
+
+        return await _notificationService.RespondToNotificationAsync(notificationId, decision);
     }
 
     public async Task DeleteServiceJobAsync(int id)
@@ -155,11 +285,27 @@ public class ServiceJobService : IServiceJobService
 
     public async Task<MechanicAssignmentDto> AssignMechanicAsync(int serviceJobId, int userId, RoleInJob roleInJob)
     {
+        var garageId = await ResolveGarageIdAsync();
         var job = await _serviceJobRepository.GetByIdAsync(serviceJobId)
             ?? throw new NotFoundException(nameof(ServiceJob), serviceJobId);
 
+        if ((job.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(ServiceJob), serviceJobId);
+        }
+
         var mechanic = await _userRepository.GetByIdAsync(userId)
             ?? throw new NotFoundException(nameof(User), userId);
+
+        if ((mechanic.GarageId ?? "default-garij-master") != garageId)
+        {
+            throw new NotFoundException(nameof(User), userId);
+        }
+
+        if (mechanic.Role != UserRole.Mechanic)
+        {
+            throw new BusinessRuleException("BR-003", $"Only users with the Mechanic role can be assigned to service jobs. User '{mechanic.FullName}' has role '{mechanic.Role}'.");
+        }
 
         var existingAssignments = await _mechanicAssignmentRepository.GetAssignmentsByJobIdAsync(serviceJobId);
 
@@ -267,6 +413,67 @@ public class ServiceJobService : IServiceJobService
         return MapToDto(entity);
     }
 
+    /// <summary>
+    /// The order a job advances through. Stages may be skipped - a mechanic who
+    /// finishes the work outright can move a job straight to Completed without
+    /// stepping through inspection and approval - but a job never moves back to
+    /// an earlier stage. Cancelled sits outside this pipeline and is reachable
+    /// from any stage that is not already terminal.
+    /// </summary>
+    private static readonly JobStatus[] StatusPipeline =
+    [
+        JobStatus.Requested,
+        JobStatus.InspectionPending,
+        JobStatus.CustomerApprovalNeeded,
+        JobStatus.InProgress,
+        JobStatus.Completed
+    ];
+
+    /// <summary>
+    /// Completed and Cancelled end a job's life. A job only ever arrives at one
+    /// of them through a status update, which is what stamps the completion date
+    /// and raises the completion notification, so a job created directly in a
+    /// terminal status would carry neither.
+    /// </summary>
+    private static bool IsTerminal(JobStatus status) =>
+        status is JobStatus.Completed or JobStatus.Cancelled;
+
+    /// <summary>
+    /// The status a job may open in. Intake always starts a job at Requested; a
+    /// caller bypassing the intake form cannot drop a brand new job into a
+    /// terminal status.
+    /// </summary>
+    private static JobStatus ValidateInitialStatus(JobStatus requestedStatus)
+    {
+        if (IsTerminal(requestedStatus))
+        {
+            throw new BusinessRuleException("BR-007", $"A new service job cannot be created with status '{requestedStatus}'. A job opens as '{JobStatus.Requested}' and only reaches '{JobStatus.Completed}' or '{JobStatus.Cancelled}' through a status update.");
+        }
+
+        return requestedStatus;
+    }
+
+    /// <summary>
+    /// A job is only finished once there is something to show for it. Completion is
+    /// what an invoice is raised from, so a job carrying neither a logged part nor a
+    /// recorded service would bill as an empty job and land in the service history
+    /// with nothing against it. Labour-only work - a diagnostic, an inspection -
+    /// clears this through its service details, which is the same bar BR-011 already
+    /// applies when the invoice itself is generated.
+    /// </summary>
+    private static void ValidateCompletionReadiness(ServiceJob job, JobStatus newStatus)
+    {
+        if (newStatus != JobStatus.Completed)
+        {
+            return;
+        }
+
+        if (job.JobPartsUsed.Count == 0 && job.JobServiceDetails.Count == 0)
+        {
+            throw new BusinessRuleException("BR-008", $"Cannot complete job '{job.BookingReference}' with nothing logged against it. Log the parts used or the services performed before marking it '{JobStatus.Completed}'.");
+        }
+    }
+
     private static void ValidateStatusTransition(JobStatus currentStatus, JobStatus newStatus)
     {
         if (currentStatus == newStatus)
@@ -289,18 +496,12 @@ public class ServiceJobService : IServiceJobService
             return;
         }
 
-        bool isValid = (currentStatus, newStatus) switch
-        {
-            (JobStatus.Requested, JobStatus.InspectionPending) => true,
-            (JobStatus.InspectionPending, JobStatus.CustomerApprovalNeeded) => true,
-            (JobStatus.CustomerApprovalNeeded, JobStatus.InProgress) => true,
-            (JobStatus.InProgress, JobStatus.Completed) => true,
-            _ => false
-        };
+        var currentStage = Array.IndexOf(StatusPipeline, currentStatus);
+        var newStage = Array.IndexOf(StatusPipeline, newStatus);
 
-        if (!isValid)
+        if (newStage <= currentStage)
         {
-            throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. Status must follow: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed.");
+            throw new BusinessRuleException("BR-007", $"Invalid status transition from '{currentStatus}' to '{newStatus}'. A job moves forward through: Requested -> InspectionPending -> CustomerApprovalNeeded -> InProgress -> Completed. Stages may be skipped, but a job cannot move back to an earlier stage.");
         }
     }
 
@@ -326,7 +527,19 @@ public class ServiceJobService : IServiceJobService
         await _notificationService.CreateNotificationAsync(new NotificationDto
         {
             ServiceJobId = entity.Id,
-            Message = $"Job {entity.BookingReference} has been completed and is ready for review."
+            Message = $"Job {entity.BookingReference} has been completed and is ready for review.",
+            Type = NotificationType.JobCompleted
+        });
+    }
+
+    private async Task NotifyCustomerApprovalNeededAsync(ServiceJob entity)
+    {
+        await _notificationService.CreateNotificationAsync(new NotificationDto
+        {
+            ServiceJobId = entity.Id,
+            Message = $"Job {entity.BookingReference} needs the customer's approval before work can go ahead. Approve to start the work, or reject to cancel the job.",
+            Type = NotificationType.CustomerApprovalRequest,
+            GarageId = entity.GarageId
         });
     }
 
@@ -344,6 +557,7 @@ public class ServiceJobService : IServiceJobService
         DiagnosticNotes = job.DiagnosticNotes,
         CreatedAt = job.CreatedAt,
         CompletedAt = job.CompletedAt,
+        GarageId = job.GarageId,
         MechanicAssignments = (job.MechanicAssignments ?? Enumerable.Empty<MechanicAssignment>()).Select(ma => new MechanicAssignmentDto
         {
             Id = ma.Id,
@@ -352,6 +566,15 @@ public class ServiceJobService : IServiceJobService
             MechanicName = ma.User?.FullName ?? "Unknown",
             RoleInJob = ma.RoleInJob,
             AssignedAt = ma.AssignedAt
+        }).ToList(),
+        JobServiceDetails = (job.JobServiceDetails ?? Enumerable.Empty<JobServiceDetail>()).Select(jsd => new JobServiceDetailDto
+        {
+            Id = jsd.Id,
+            ServiceJobId = jsd.ServiceJobId,
+            ServiceCatalogId = jsd.ServiceCatalogId,
+            ServiceName = jsd.ServiceCatalog?.Name ?? "Service",
+            Quantity = jsd.Quantity,
+            PriceAtBooking = jsd.PriceAtBooking
         }).ToList()
     };
 }
