@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Garij.Application.DTOs.ServiceJobDto>
+@model IEnumerable<Garij.Application.DTOs.ServiceJobDto>
 @using Garij.Domain.Enums
 @using Garij.Web.Helpers
 
@@ -215,7 +215,7 @@ else
                                     <input type="hidden" name="filterStatus" value="@selectedStatus" />
                                     <input type="hidden" name="sortBy" value="@selectedSortBy" />
                                     <input type="hidden" name="search" value="@searchTerm" />
-                                    <textarea name="diagnosticNotes" class="app-form-control mb-2" rows="3" placeholder="Add diagnostic notes...">@job.DiagnosticNotes</textarea>
+                                    <textarea name="diagnosticNotes" maxlength="2000" class="app-form-control mb-2" rows="3" placeholder="Add diagnostic notes...">@job.DiagnosticNotes</textarea>
                                     <button type="submit" class="app-btn app-btn-primary app-btn-sm w-100">Save Diagnostic Notes</button>
                                 </form>
                             </div>
