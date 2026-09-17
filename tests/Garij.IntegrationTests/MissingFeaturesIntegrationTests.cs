@@ -296,15 +296,20 @@ public class MissingFeaturesIntegrationTests : IClassFixture<AuthorizationTestFa
             new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = token }));
 
         var today = DateTime.UtcNow.Date;
-        var html = await (await client.GetAsync($"/Report/Revenue?start={today.AddDays(-1):yyyy-MM-dd}&end={today.AddDays(1):yyyy-MM-dd}")).Content.ReadAsStringAsync();
+        var start = today.AddDays(-1);
+        var end = today.AddDays(1);
+        var html = await (await client.GetAsync($"/Report/Revenue?start={start:yyyy-MM-dd}&end={end:yyyy-MM-dd}")).Content.ReadAsStringAsync();
 
         Assert.Matches("id=\"refunded-payment-amount\">[^<]*123[.,]45<", html);
         Assert.Contains("excluded from collected", html);
 
         // Cash Collected is what was received in the period minus what was refunded. Other tests in
         // this class also take payments today, so the expected figure is read from the database.
+        var rangeEnd = end.TimeOfDay == TimeSpan.Zero ? end.Date.AddDays(1).AddTicks(-1) : end;
         var expectedCollected = WithDb(db => db.PaymentTransactions.AsNoTracking()
-            .Where(p => p.PaidAt >= today.AddDays(-1) && p.RefundedAt == null)
+            .Where(p => (p.Invoice.GarageId ?? "default-garij-master") == GarageId &&
+                        p.PaidAt >= start && p.PaidAt <= rangeEnd &&
+                        p.RefundedAt == null)
             .AsEnumerable()
             .Sum(p => p.Amount));
         var shownCollected = Regex.Match(html, "id=\"total-collected\">[^0-9]*([0-9.,]+)<").Groups[1].Value;
