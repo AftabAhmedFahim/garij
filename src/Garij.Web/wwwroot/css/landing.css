@@ -3096,7 +3096,7 @@ body.landing-page-body {
         align-items: center;
         justify-content: center;
         line-height: 1.02;
-        white-space: nowrap;
+        white-space: normal;
         font-size: 0.62rem;
         letter-spacing: 0.7px;
     }

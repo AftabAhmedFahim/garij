@@ -1352,7 +1352,7 @@ textarea.app-form-control {
         justify-content: center;
         line-height: 1.02;
         min-width: 0;
-        white-space: nowrap;
+        white-space: normal;
         font-size: 0.62rem;
         letter-spacing: 0.7px;
     }
