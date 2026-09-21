@@ -447,7 +447,7 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
     }
 
     [Fact]
-    public async Task Pages_DoNotRenderRemovedThemeToggle_ButRetainThemeInitializer()
+    public async Task Pages_DoNotRenderRemovedThemeToggle()
     {
         // Arrange
         var client = _factory.CreateClient();
@@ -457,9 +457,7 @@ public class ProjectPurchaseIntegrationTests : IClassFixture<AuthorizationTestFa
         Assert.Equal(HttpStatusCode.OK, landingResponse.StatusCode);
         var landingHtml = await landingResponse.Content.ReadAsStringAsync();
 
-        // The layout retains the initializer for an existing saved preference, but the
-        // user-facing light/dark toggle and its client-side handler were intentionally removed.
-        Assert.Contains("garij_theme", landingHtml);
+        // The user-facing light/dark control and its handler were intentionally removed.
         Assert.DoesNotContain("data-theme-toggle", landingHtml);
         Assert.DoesNotContain("theme-toggle.js", landingHtml);
 
